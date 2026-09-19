@@ -22,17 +22,23 @@ async function main() {
     );
   }
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const normalizedEmail = email.toLowerCase().trim();
+  const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
-  const user = await prisma.user.upsert({
-    where: { email: email.toLowerCase().trim() },
-    update: { passwordHash },
-    create: {
-      email: email.toLowerCase().trim(),
-      passwordHash,
-      name: "Santi Irawati",
-    },
-  });
+  let user = existingUser;
+  if (!existingUser) {
+    const passwordHash = await bcrypt.hash(password, 10);
+    user = await prisma.user.create({
+      data: {
+        email: normalizedEmail,
+        passwordHash,
+        name: "Santi Irawati",
+      },
+    });
+    console.log(`Admin user dibuat: ${user.email}`);
+  } else {
+    console.log(`Admin user sudah ada, password tidak diubah (ganti lewat halaman Pengaturan): ${user.email}`);
+  }
 
   await prisma.settings.upsert({
     where: { id: "settings" },

@@ -86,19 +86,18 @@ Untuk menguji seperti kondisi production sebelum deploy, jalankan `npm run build
    - `NEXTAUTH_URL` → domain publik yang diberikan Railway untuk service ini, contoh `https://nama-service.up.railway.app` (bisa diisi setelah domain pertama kali dibuat, lalu redeploy).
    - `ADMIN_EMAIL` dan `ADMIN_PASSWORD` → kredensial admin awal untuk seed.
 5. Pastikan **Build Command** memakai default (`npm run build`) — script ini sudah menjalankan `prisma generate` otomatis (juga lewat `postinstall`).
-6. Pastikan **Start Command** memakai default (`npm run start`) — script ini otomatis menjalankan `prisma migrate deploy` sebelum `next start`, jadi skema database selalu sinkron setiap deploy.
-7. Deploy. Setelah deploy pertama sukses, jalankan seed admin **sekali** lewat Railway CLI:
-   ```bash
-   railway run npx prisma db seed
-   ```
+6. Pastikan **Start Command** memakai default (`npm run start`) — script ini otomatis menjalankan `prisma migrate deploy` lalu **seed admin** (`node prisma/seed.js`) sebelum `next start`, setiap kali service start/redeploy. **Tidak perlu Railway CLI atau langkah manual apa pun** — akun admin dari `ADMIN_EMAIL`/`ADMIN_PASSWORD` otomatis dibuat saat deploy pertama. Seed ini aman dijalankan berulang: kalau admin sudah ada, seed hanya memastikan record-nya ada dan **tidak menimpa password** yang sudah kamu ganti lewat halaman Pengaturan.
+7. Deploy dan tunggu sampai status **Active**. Cek tab **Deploy Logs** — pastikan muncul baris `Admin user dibuat: ...` (atau `Admin user sudah ada, ...` kalau ini bukan deploy pertama).
 8. Buka domain publik dari Railway, login dengan `ADMIN_EMAIL`/`ADMIN_PASSWORD`, lalu segera ganti password lewat halaman **Pengaturan**.
+
+> **Tidak bisa login setelah deploy?** Cek `https://<domain-kamu>/api-health-check` dulu — kalau `checks.database.ok` bernilai `false`, berarti `DATABASE_URL` belum benar (biasanya lupa pakai syntax `${{Postgres.DATABASE_URL}}`). Kalau health check `ok` tapi login tetap gagal, buka **Deploy Logs** dan cari baris `Admin user dibuat`/`Admin user sudah ada` — kalau baris itu tidak ada sama sekali, kemungkinan `ADMIN_EMAIL`/`ADMIN_PASSWORD` belum diisi (seed akan melempar error dan proses start akan gagal total, terlihat jelas di log). Isi variable-nya lalu redeploy.
 
 ### Checklist Anti-Error Railway
 
 Poin-poin umum penyebab deploy Next.js + Prisma gagal di Railway, dan status penanganannya di project ini:
 
 - [x] **Prisma generate saat build** — `postinstall: prisma generate` di `package.json`, dan juga eksplisit di `build`: `prisma generate && next build`. Ganda supaya aman walau salah satu hook di-skip Railway.
-- [x] **Migrasi otomatis sebelum start** — `start`: `prisma migrate deploy && next start -p ${PORT:-3000}`. Tidak ada langkah migrasi manual yang bisa terlupa.
+- [x] **Migrasi & seed admin otomatis sebelum start** — `start`: `prisma migrate deploy && node prisma/seed.js && next start -p ${PORT:-3000}`. Tidak ada langkah migrasi/seed manual (atau Railway CLI) yang bisa terlupa atau gagal karena tool belum ter-install di mesin lokal. Seed bersifat idempoten — tidak menimpa password admin yang sudah diganti lewat UI.
 - [x] **Tidak ada static generation yang butuh DB saat build** — semua route yang query Prisma (dashboard, produk, pesanan, keuangan, piutang, laporan, pengaturan, login, layout app) diberi `export const dynamic = "force-dynamic"`. Sudah diverifikasi lewat audit otomatis, semua route DB-query sudah menyatakannya.
 - [x] **Logo tidak disimpan di filesystem** — logo toko disimpan sebagai base64 data URL di kolom `Settings.logoDataUrl` (database), bukan `public/uploads`. File `public/logo.png` hanya fallback statis untuk favicon & default sebelum seed pertama — bukan sumber kebenaran setelah Settings ada di DB.
 - [x] **Tanpa native `bcrypt`** — pakai `bcryptjs` (pure JS) di seluruh kode (hash password login & seed). Sudah diaudit, tidak ada dependency `bcrypt` native tersisa di `package.json`.

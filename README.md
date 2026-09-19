@@ -4,11 +4,18 @@ Webapp privat untuk mencatat produk, pesanan, invoice, keuangan (kas masuk/kelua
 
 ## Versi
 
-**v1.0.1** — rilis percobaan pertama, sudah mendapat satu perbaikan reliabilitas deploy.
+**v1.0.2** — rilis percobaan pertama, sudah mendapat beberapa perbaikan reliabilitas deploy (termasuk satu bug kritis: loop redirect saat login di Railway).
 
 ### Changelog
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/).
+
+#### [1.0.2] - 2026-09-19
+
+Diperbaiki (kritis — ditemukan setelah deploy sungguhan ke Railway oleh Santi):
+
+- **Login berulang gagal dengan `ERR_TOO_MANY_REDIRECTS`/"too many redirects"** di Railway walau kredensial benar. Penyebab: middleware (jalan di Edge runtime) dan halaman login (jalan di Node runtime) menentukan nama cookie sesi NextAuth secara **otomatis** dari deteksi protokol request, dan keduanya bisa tidak sepakat di belakang proxy Railway — middleware menganggap belum login (redirect ke `/login`), halaman login menganggap sudah login (redirect ke `/`), keduanya saling lempar redirect tanpa henti. Diperbaiki dengan `lib/auth-cookie.ts`: nama cookie sesi kini ditentukan **eksplisit & identik** di kedua sisi berdasarkan `NODE_ENV` (konsisten diisi Next.js sendiri), bukan deteksi otomatis. Sudah diverifikasi langsung di production: sebelum fix `curl` mendeteksi 50+ redirect berulang, sesudah fix langsung `200` tanpa redirect sama sekali.
+- Setelah fix dideploy, dilakukan **QA ulang penuh langsung di situs production** (bukan cuma lokal): login/logout berulang kali, ganti sesi, seluruh alur CRUD (produk, rekening bank, pesanan, invoice PNG, piutang, transaksi manual, laporan), dan tampilan mobile — semuanya normal. Detail lihat bagian Hasil Verifikasi Tahap 3.
 
 #### [1.0.1] - 2026-09-19
 
@@ -119,6 +126,7 @@ Poin-poin umum penyebab deploy Next.js + Prisma gagal di Railway, dan status pen
 - [x] **Environment variables build-time vs runtime** — semua env var di project ini (`DATABASE_URL`, `AUTH_SECRET`, `NEXTAUTH_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`) hanya dibutuhkan saat **runtime** (tidak ada yang dibaca saat `next build`), jadi cukup diisi sebagai service Variable biasa di Railway — tidak perlu pengaturan khusus "build-time variable". `DATABASE_URL` **wajib** memakai syntax referensi `${{Postgres.DATABASE_URL}}`, bukan nilai yang di-copy-paste manual (supaya otomatis ikut berubah kalau Postgres di-recreate).
 - [x] **`AUTH_SECRET`/`NEXTAUTH_URL` wajib sebelum deploy pertama** — tanpa ini, NextAuth akan error saat runtime atau redirect login tidak berfungsi benar. Isi keduanya di tab Variables **sebelum** klik Deploy pertama kali.
 - [x] **Diuji dalam mode production, bukan dev** — `npm run build` → `npm run start` dijalankan dan di-smoke-test langsung (lihat bagian Hasil Verifikasi), bukan hanya `next dev`.
+- [x] **Nama cookie sesi NextAuth eksplisit & konsisten di semua runtime** — `lib/auth-cookie.ts` menentukan nama cookie sesi (dan `useSecureCookies`) berdasarkan `NODE_ENV`, dipakai identik di `middleware.ts` (Edge runtime) maupun `lib/auth.ts` (Node runtime/`getServerSession`). Ini mencegah kelas bug "loop redirect antara `/login` dan halaman terproteksi" yang bisa muncul kalau kedua runtime mendeteksi protokol/nama cookie secara berbeda di belakang reverse proxy seperti Railway — **bug ini sempat benar-benar terjadi di v1.0.1 dan baru ditemukan setelah deploy sungguhan**, lihat Changelog `[1.0.2]`.
 
 ## Hasil Verifikasi
 
@@ -146,7 +154,13 @@ Verifikasi dilakukan dua tahap, semuanya di lingkungan lokal dengan Postgres via
 - **1 bug ditemukan & langsung diperbaiki**: posisi scroll tidak reset ke atas setelah redirect dari Server Action, menyebabkan header halaman pesanan sempat tertutup topbar sesaat setelah submit form panjang. Lihat entri Changelog `[1.0.0]` bagian "Diperbaiki".
 - Setelah QA, seluruh data uji dihapus dari database, server & Postgres lokal dimatikan, dan cache/profil browser automation dibersihkan — repo & environment dikembalikan ke kondisi bersih.
 
-Karena tahap 2 sudah mencakup klik langsung di browser sungguhan (bukan cuma tinjauan kode), Santi tidak wajib mengulang uji coba ini dari awal — cukup familiarisasi normal saat pertama pakai.
+**Tahap 3 — QA ulang langsung di production Railway, setelah bug redirect loop `[1.0.2]` diperbaiki:**
+
+- Root cause redirect loop dikonfirmasi lewat `curl` langsung ke domain production (login → ambil cookie sesi asli → akses `/` → sebelum fix: 50+ redirect berulang; sesudah fix & redeploy: `200` langsung tanpa redirect).
+- QA browser sungguhan diulang **langsung di domain production** (bukan lokal): login (kredensial benar & salah), reload halaman berkali-kali (pastikan sesi tidak sempat loop lagi), logout lalu login ulang, tambah produk/rekening bank/pesanan uji, generate & unduh invoice PNG (diverifikasi valid), toggle Lunas/Belum Lunas (transaksi otomatis tercatat & terhapus dengan benar), tambah transaksi manual, cek Laporan & Dashboard, cek tampilan mobile (390px) — semua normal, tidak ada regresi dari fix cookie.
+- Seluruh data uji yang dibuat di production **sudah dibersihkan lewat UI** (pesanan uji dibatalkan, produk uji diarsipkan, rekening bank uji dinonaktifkan, transaksi otomatis ikut terhapus) — aplikasi ini tidak punya fitur hapus permanen by design (lihat bagian 4.2–4.7 `requirement_final.md`, arsip bukan hapus, demi integritas histori), dan proses QA ini sengaja tidak mengakses `DATABASE_URL` production secara langsung.
+
+Karena tahap 2 & 3 sudah mencakup klik langsung di browser sungguhan (termasuk langsung di production), Santi tidak wajib mengulang uji coba ini dari awal — cukup familiarisasi normal saat pertama pakai, dan disarankan mengganti password admin dari halaman Pengaturan kalau belum.
 
 ## Struktur Folder
 
@@ -160,6 +174,7 @@ app/
 lib/
   actions/            Next.js Server Actions per modul (produk, pesanan, keuangan, dll.)
   auth.ts             konfigurasi NextAuth
+  auth-cookie.ts      nama cookie sesi (dipakai konsisten oleh middleware & auth.ts)
   prisma.ts           Prisma client singleton
   invoice-image.tsx   template JSX invoice untuk satori
   dashboard.ts        query & agregasi data dashboard

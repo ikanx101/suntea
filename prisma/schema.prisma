@@ -1,0 +1,136 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Product {
+  id           String      @id @default(cuid())
+  name         String
+  description  String?
+  category     String
+  supplierName String?
+  buyPrice     Int
+  sellPrice    Int
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  orderItems   OrderItem[]
+
+  @@index([category])
+  @@index([isActive])
+}
+
+enum OrderStatus {
+  NEW
+  PROCESSING
+  DONE
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+}
+
+model Order {
+  id                    String        @id @default(cuid())
+  invoiceNumber         String        @unique
+  customerName          String
+  customerWhatsapp      String
+  status                OrderStatus   @default(NEW)
+  paymentStatus         PaymentStatus @default(UNPAID)
+  paidAt                DateTime?
+  note                  String?
+  orderDate             DateTime      @default(now())
+  total                 Int
+  bankAccountId         String?
+  bankNameSnapshot      String?
+  accountNumberSnapshot String?
+  accountHolderSnapshot String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  bankAccount  BankAccount?  @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  items        OrderItem[]
+  transactions Transaction[]
+
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([orderDate])
+}
+
+model OrderItem {
+  id                 String @id @default(cuid())
+  orderId            String
+  productId          String?
+  productNameSnapshot String
+  unitPriceSnapshot  Int
+  qty                Int
+  subtotal           Int
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+}
+
+model BankAccount {
+  id                String   @id @default(cuid())
+  bankName          String
+  accountNumber     String
+  accountHolderName String
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  orders Order[]
+}
+
+enum TransactionType {
+  IN
+  OUT
+}
+
+enum TransactionSource {
+  MANUAL
+  ORDER
+}
+
+model Transaction {
+  id          String            @id @default(cuid())
+  type        TransactionType
+  amount      Int
+  category    String
+  description String?
+  date        DateTime          @default(now())
+  source      TransactionSource @default(MANUAL)
+  orderId     String?
+  createdAt   DateTime          @default(now())
+
+  order Order? @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([type])
+  @@index([date])
+  @@index([orderId])
+}
+
+model Settings {
+  id           String  @id @default("settings")
+  storeName    String  @default("Toko Santi Irawati")
+  logoDataUrl  String?
+  updatedAt    DateTime @updatedAt
+}

@@ -1,0 +1,155 @@
+# Toko Santi Irawati — Webapp Manajemen Toko
+
+Webapp privat untuk mencatat produk, pesanan, invoice, keuangan (kas masuk/keluar), dan konfirmasi piutang milik Santi Irawati (reseller frozen food & ready-to-eat). Dibangun sesuai `requirement_final.md`.
+
+## Versi
+
+**v1.0.0** — percobaan/rilis pertama.
+
+### Changelog
+
+Format mengikuti [Keep a Changelog](https://keepachangelog.com/).
+
+#### [1.0.0] - 2026-09-19
+
+Ditambahkan:
+
+- **Autentikasi**: login (Credentials, single admin), logout, ganti password, sesi bertahan 30 hari, tanpa halaman registrasi publik.
+- **Produk**: CRUD + arsip barang, field nama pemasok (internal, tidak tampil di invoice), kategori, harga beli/jual, pencarian & filter kategori.
+- **Pesanan**: CRUD pesanan multi-item dengan snapshot harga & nama barang, status pesanan (Baru/Diproses/Selesai/Dibatalkan) terpisah dari status pembayaran.
+- **Invoice PNG**: generate invoice bertema girly (lebar tetap 1080px, tinggi menyesuaikan), pilih rekening bank tujuan, tabel item hanya nama barang/qty/total, tombol download & share (Web Share API).
+- **Rekening Bank**: CRUD rekening bank (bisa lebih dari satu), snapshot ke pesanan saat invoice dibuat.
+- **Keuangan**: buku kas — transaksi manual & otomatis dari konfirmasi pembayaran, transaksi hasil pesanan bersifat read-only.
+- **Piutang**: halaman konfirmasi pembayaran — checklist Lunas/Belum Lunas per invoice, filter & pencarian, ringkasan total piutang.
+- **Dashboard**: ringkasan pemasukan/pengeluaran/laba bersih, margin kotor, pesanan per status, total piutang, produk terlaris, grafik tren.
+- **Laporan**: filter transaksi & pesanan berdasarkan rentang tanggal.
+- **Pengaturan**: nama toko, logo (disimpan sebagai base64 di database), kelola rekening bank, ganti password. Logo awal (`logo_SI.png`) otomatis terpasang saat seed pertama kali.
+
+Sengaja belum termasuk (menunggu konfirmasi Santi — lihat bagian 12 `requirement_final.md`):
+
+- Export laporan ke CSV/Excel.
+- Foto produk & tracking stok kuantitas.
+- Akun multi-user (staf/kurir).
+- Varian ukuran invoice (saat ini hanya 1 ukuran universal, lebar 1080px).
+
+## Stack Teknis
+
+| Layer | Pilihan |
+|---|---|
+| Framework | Next.js 14 (App Router) + TypeScript |
+| Styling | Tailwind CSS (tema custom "Girly & Active") |
+| Database | PostgreSQL |
+| ORM | Prisma 5 |
+| Autentikasi | next-auth v4 (Credentials Provider, JWT session) + bcryptjs |
+| Invoice PNG | satori (JSX → SVG) + @resvg/resvg-js (SVG → PNG) |
+| Chart | Recharts |
+| Validasi | Zod |
+| Mutasi data | Next.js Server Actions |
+
+## Setup Pengembangan Lokal
+
+Prasyarat: Node.js 20+, Docker (untuk Postgres lokal).
+
+```bash
+# 1. Install dependency
+npm install
+
+# 2. Salin file environment
+cp .env.example .env
+# lalu isi AUTH_SECRET (contoh: openssl rand -base64 32), ADMIN_EMAIL, ADMIN_PASSWORD
+
+# 3. Jalankan Postgres lokal
+docker compose up -d
+
+# 4. Migrasi database
+npx prisma migrate dev
+
+# 5. Buat akun admin (Santi) + seed pengaturan awal (termasuk logo default)
+npx prisma db seed
+
+# 6. Jalankan aplikasi
+npm run dev
+```
+
+Buka `http://localhost:3000`, login dengan `ADMIN_EMAIL`/`ADMIN_PASSWORD` yang diisi di `.env`.
+
+Untuk menguji seperti kondisi production sebelum deploy, jalankan `npm run build` lalu `npm run start` (bukan `npm run dev`) — beberapa masalah hanya muncul di production build.
+
+## Cara Deploy ke Railway
+
+1. Push repository ini ke GitHub.
+2. Di Railway, buat **New Project** → **Deploy from GitHub repo**, pilih repo ini.
+3. Tambahkan **plugin/service PostgreSQL** ke project yang sama (klik **+ New** → **Database** → **PostgreSQL**).
+4. Buka service web (Next.js) → tab **Variables**, tambahkan:
+   - `DATABASE_URL` → isi dengan referensi variable Postgres, bukan nilai hardcode: `${{Postgres.DATABASE_URL}}` (sesuaikan nama service Postgres kamu).
+   - `AUTH_SECRET` → generate manual (`openssl rand -base64 32`), **wajib diisi sebelum deploy pertama**.
+   - `NEXTAUTH_URL` → domain publik yang diberikan Railway untuk service ini, contoh `https://nama-service.up.railway.app` (bisa diisi setelah domain pertama kali dibuat, lalu redeploy).
+   - `ADMIN_EMAIL` dan `ADMIN_PASSWORD` → kredensial admin awal untuk seed.
+5. Pastikan **Build Command** memakai default (`npm run build`) — script ini sudah menjalankan `prisma generate` otomatis (juga lewat `postinstall`).
+6. Pastikan **Start Command** memakai default (`npm run start`) — script ini otomatis menjalankan `prisma migrate deploy` sebelum `next start`, jadi skema database selalu sinkron setiap deploy.
+7. Deploy. Setelah deploy pertama sukses, jalankan seed admin **sekali** lewat Railway CLI:
+   ```bash
+   railway run npx prisma db seed
+   ```
+8. Buka domain publik dari Railway, login dengan `ADMIN_EMAIL`/`ADMIN_PASSWORD`, lalu segera ganti password lewat halaman **Pengaturan**.
+
+### Checklist Anti-Error Railway
+
+Poin-poin umum penyebab deploy Next.js + Prisma gagal di Railway, dan status penanganannya di project ini:
+
+- [x] **Prisma generate saat build** — `postinstall: prisma generate` di `package.json`, dan juga eksplisit di `build`: `prisma generate && next build`. Ganda supaya aman walau salah satu hook di-skip Railway.
+- [x] **Migrasi otomatis sebelum start** — `start`: `prisma migrate deploy && next start -p ${PORT:-3000}`. Tidak ada langkah migrasi manual yang bisa terlupa.
+- [x] **Tidak ada static generation yang butuh DB saat build** — semua route yang query Prisma (dashboard, produk, pesanan, keuangan, piutang, laporan, pengaturan, login, layout app) diberi `export const dynamic = "force-dynamic"`. Sudah diverifikasi lewat audit otomatis, semua route DB-query sudah menyatakannya.
+- [x] **Logo tidak disimpan di filesystem** — logo toko disimpan sebagai base64 data URL di kolom `Settings.logoDataUrl` (database), bukan `public/uploads`. File `public/logo.png` hanya fallback statis untuk favicon & default sebelum seed pertama — bukan sumber kebenaran setelah Settings ada di DB.
+- [x] **Tanpa native `bcrypt`** — pakai `bcryptjs` (pure JS) di seluruh kode (hash password login & seed). Sudah diaudit, tidak ada dependency `bcrypt` native tersisa di `package.json`.
+- [x] **Binary native `@resvg/resvg-js`** — versi yang dipakai punya prebuilt binary untuk `linux-x64-gnu` (target default Railway/Nixpacks) sebagai `optionalDependencies`; jangan pernah install dengan `--omit=optional`. Sudah diuji generate PNG invoice secara lokal dan berhasil (lihat hasil uji di bawah).
+- [x] **Case-sensitivity import** — sudah diaudit dengan script otomatis (bandingkan setiap `import`/`from` terhadap nama file asli di disk): 0 masalah ditemukan.
+- [x] **`package-lock.json` konsisten** — file di-commit (tidak di-gitignore), tidak ada `yarn.lock`/`pnpm-lock.yaml` lain, supaya Railway bisa `npm ci` deterministik.
+- [x] **Build bersih** — `npm run build` diverifikasi selesai dengan exit code `0`, tanpa error TypeScript/ESLint yang lolos diam-diam.
+- [ ] **Environment variables build-time vs runtime** — semua env var di project ini (`DATABASE_URL`, `AUTH_SECRET`, `NEXTAUTH_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`) hanya dibutuhkan saat **runtime** (tidak ada yang dibaca saat `next build`), jadi cukup diisi sebagai service Variable biasa di Railway — tidak perlu pengaturan khusus "build-time variable". `DATABASE_URL` **wajib** memakai syntax referensi `${{Postgres.DATABASE_URL}}`, bukan nilai yang di-copy-paste manual (supaya otomatis ikut berubah kalau Postgres di-recreate).
+- [x] **`AUTH_SECRET`/`NEXTAUTH_URL` wajib sebelum deploy pertama** — tanpa ini, NextAuth akan error saat runtime atau redirect login tidak berfungsi benar. Isi keduanya di tab Variables **sebelum** klik Deploy pertama kali.
+- [x] **Diuji dalam mode production, bukan dev** — `npm run build` → `npm run start` dijalankan dan di-smoke-test langsung (lihat bagian Hasil Verifikasi), bukan hanya `next dev`.
+
+## Hasil Verifikasi (dilakukan sebelum rilis v1.0.0)
+
+Dijalankan di lingkungan lokal dengan Postgres via `docker compose`, dalam mode **production build** (`npm run build` → `npm run start`), bukan `next dev`:
+
+- `npm run build` → sukses, exit code `0`, seluruh route non-auth bertipe dynamic (`ƒ`), tidak ada static generation yang menyentuh database.
+- Login via NextAuth Credentials (flow CSRF penuh, bukan simulasi) → berhasil, session cookie valid, halaman terproteksi bisa diakses setelahnya.
+- Akses tanpa sesi ke `/` → redirect 307 ke `/login` (middleware bekerja); asset publik (`/logo.png`) tetap bisa diakses tanpa login (dipakai di halaman login).
+- Semua halaman utama (`/`, `/produk`, `/pesanan`, `/pesanan/[id]`, `/pesanan/baru`, `/keuangan`, `/piutang`, `/laporan`, `/pengaturan`) di-request dengan sesi valid → semuanya `200 OK`, termasuk saat database kosong (edge case tanpa data).
+- Data uji dibuat langsung lewat Prisma (produk, rekening bank, pesanan multi-item, nama pelanggan sangat panjang) untuk menguji alur invoice.
+- Endpoint `GET /api/pesanan/[id]/invoice`:
+  - Tanpa rekening bank dipilih → `400` dengan pesan error yang jelas (bukan crash).
+  - Tanpa sesi login → di-redirect oleh middleware (tidak bisa diakses publik).
+  - Dengan rekening bank terpilih → `200`, menghasilkan file **PNG valid** (diverifikasi lewat `file` command & dibuka visual): lebar tetap 1080px, tinggi menyesuaikan jumlah item, tabel item hanya menampilkan nama barang/qty/total (tanpa harga satuan & nama pemasok), info rekening bank tampil, nama pelanggan yang sangat panjang dipotong rapi dengan ellipsis, logo toko tampil di header invoice.
+- Setelah verifikasi, data uji dihapus, server & Postgres lokal dimatikan (`docker compose down`) — repo dikembalikan ke kondisi bersih siap dipakai.
+
+Belum diuji dengan browser sungguhan (Playwright/manual click-through) karena lingkungan eksekusi ini tidak menyediakan browser — interaksi client-side (form React, tombol share, dsb.) sudah ditinjau lewat pembacaan kode, bukan lewat klik langsung di browser. Disarankan Santi mencoba alur penuh (tambah barang → buat pesanan → generate invoice → share ke WhatsApp → konfirmasi piutang) sekali dari HP sebelum dipakai produksi harian.
+
+## Struktur Folder
+
+```
+app/
+  login/              halaman login (publik)
+  (app)/              seluruh halaman yang butuh login (dashboard, produk, pesanan, dst.)
+  api/auth/           route handler NextAuth
+  api/pesanan/[id]/invoice/   route handler generate invoice PNG
+lib/
+  actions/            Next.js Server Actions per modul (produk, pesanan, keuangan, dll.)
+  auth.ts             konfigurasi NextAuth
+  prisma.ts           Prisma client singleton
+  invoice-image.tsx   template JSX invoice untuk satori
+  dashboard.ts        query & agregasi data dashboard
+components/           komponen UI yang dipakai lintas halaman
+prisma/               schema.prisma, migrations, seed.js
+assets/fonts/         font .woff untuk render invoice (satori)
+public/logo.png       logo default/fallback statis (favicon & sebelum seed)
+```
+
+## Catatan Keamanan
+
+- **Jangan pernah commit `.env`** — sudah ada di `.gitignore`, hanya `.env.example` yang di-commit.
+- Ganti `AUTH_SECRET` dan password admin default sebelum dipakai produksi sungguhan.
+- `npm audit` masih melaporkan beberapa advisory pada Next.js 14.2.x dan dependency transitif `satori`/`postcss` yang sebagian besar terkait fitur yang tidak dipakai project ini (custom server, hosting Windows, i18n Pages Router, AVIF image optimization). Tetap disarankan menjalankan `npm audit` / `npm outdated` secara berkala dan upgrade patch versi Next 14.2.x terbaru.
+- Endpoint invoice PNG dan seluruh halaman aplikasi diproteksi middleware — hanya bisa diakses setelah login.

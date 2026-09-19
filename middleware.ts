@@ -1,9 +1,15 @@
 import withAuth from "next-auth/middleware";
+import { authSessionCookieName } from "@/lib/auth-cookie";
 
 export default withAuth({
   secret: process.env.AUTH_SECRET,
   pages: {
     signIn: "/login",
+  },
+  cookies: {
+    sessionToken: {
+      name: authSessionCookieName,
+    },
   },
 });
 

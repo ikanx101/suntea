@@ -2,9 +2,22 @@ import type { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { authSessionCookieName, useSecureAuthCookies } from "@/lib/auth-cookie";
 
 export const authOptions: AuthOptions = {
   session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
+  useSecureCookies: useSecureAuthCookies,
+  cookies: {
+    sessionToken: {
+      name: authSessionCookieName,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureAuthCookies,
+      },
+    },
+  },
   pages: {
     signIn: "/login",
   },

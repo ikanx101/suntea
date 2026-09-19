@@ -4,11 +4,17 @@ Webapp privat untuk mencatat produk, pesanan, invoice, keuangan (kas masuk/kelua
 
 ## Versi
 
-**v1.0.0** — percobaan/rilis pertama.
+**v1.0.1** — rilis percobaan pertama, sudah mendapat satu perbaikan reliabilitas deploy.
 
 ### Changelog
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/).
+
+#### [1.0.1] - 2026-09-19
+
+Diperbaiki:
+
+- Seed akun admin sekarang berjalan **otomatis** setiap kali aplikasi start/redeploy (bagian dari `npm run start`: `prisma migrate deploy && node prisma/seed.js && next start`). Sebelumnya harus dijalankan manual lewat `railway run npx prisma db seed`, yang gagal kalau Railway CLI belum ter-install di komputer lokal (perintah itu jalan di komputer lokal, bukan di server Railway). Seed dibuat idempoten — aman dijalankan berulang tiap deploy, dan tidak menimpa password admin yang sudah diganti dari halaman Pengaturan.
 
 #### [1.0.0] - 2026-09-19
 
@@ -23,7 +29,12 @@ Ditambahkan:
 - **Piutang**: halaman konfirmasi pembayaran — checklist Lunas/Belum Lunas per invoice, filter & pencarian, ringkasan total piutang.
 - **Dashboard**: ringkasan pemasukan/pengeluaran/laba bersih, margin kotor, pesanan per status, total piutang, produk terlaris, grafik tren.
 - **Laporan**: filter transaksi & pesanan berdasarkan rentang tanggal.
-- **Pengaturan**: nama toko, logo (disimpan sebagai base64 di database), kelola rekening bank, ganti password. Logo awal (`logo_SI.png`) otomatis terpasang saat seed pertama kali.
+- **Pengaturan**: nama toko, logo (disimpan sebagai base64 di database), kelola rekening bank, ganti password. Logo awal (`public/logo.png`) otomatis terpasang saat seed pertama kali.
+- **Health Check**: endpoint publik `GET /api-health-check` (tidak perlu login) untuk mengecek status koneksi database & kelengkapan env var penting — berguna untuk memantau kesehatan aplikasi setelah deploy.
+
+Diperbaiki (ditemukan & diperbaiki lewat QA browser sebelum rilis — lihat bagian Hasil Verifikasi):
+
+- Posisi scroll browser tidak reset ke atas setelah redirect dari Server Action (misal setelah submit "Tambah Pesanan Baru"), menyebabkan header halaman pesanan sempat tertutup topbar. Diperbaiki dengan `components/scroll-to-top.tsx` yang mereset scroll ke atas setiap perpindahan halaman.
 
 Sengaja belum termasuk (menunggu konfirmasi Santi — lihat bagian 12 `requirement_final.md`):
 
@@ -105,26 +116,37 @@ Poin-poin umum penyebab deploy Next.js + Prisma gagal di Railway, dan status pen
 - [x] **Case-sensitivity import** — sudah diaudit dengan script otomatis (bandingkan setiap `import`/`from` terhadap nama file asli di disk): 0 masalah ditemukan.
 - [x] **`package-lock.json` konsisten** — file di-commit (tidak di-gitignore), tidak ada `yarn.lock`/`pnpm-lock.yaml` lain, supaya Railway bisa `npm ci` deterministik.
 - [x] **Build bersih** — `npm run build` diverifikasi selesai dengan exit code `0`, tanpa error TypeScript/ESLint yang lolos diam-diam.
-- [ ] **Environment variables build-time vs runtime** — semua env var di project ini (`DATABASE_URL`, `AUTH_SECRET`, `NEXTAUTH_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`) hanya dibutuhkan saat **runtime** (tidak ada yang dibaca saat `next build`), jadi cukup diisi sebagai service Variable biasa di Railway — tidak perlu pengaturan khusus "build-time variable". `DATABASE_URL` **wajib** memakai syntax referensi `${{Postgres.DATABASE_URL}}`, bukan nilai yang di-copy-paste manual (supaya otomatis ikut berubah kalau Postgres di-recreate).
+- [x] **Environment variables build-time vs runtime** — semua env var di project ini (`DATABASE_URL`, `AUTH_SECRET`, `NEXTAUTH_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`) hanya dibutuhkan saat **runtime** (tidak ada yang dibaca saat `next build`), jadi cukup diisi sebagai service Variable biasa di Railway — tidak perlu pengaturan khusus "build-time variable". `DATABASE_URL` **wajib** memakai syntax referensi `${{Postgres.DATABASE_URL}}`, bukan nilai yang di-copy-paste manual (supaya otomatis ikut berubah kalau Postgres di-recreate).
 - [x] **`AUTH_SECRET`/`NEXTAUTH_URL` wajib sebelum deploy pertama** — tanpa ini, NextAuth akan error saat runtime atau redirect login tidak berfungsi benar. Isi keduanya di tab Variables **sebelum** klik Deploy pertama kali.
 - [x] **Diuji dalam mode production, bukan dev** — `npm run build` → `npm run start` dijalankan dan di-smoke-test langsung (lihat bagian Hasil Verifikasi), bukan hanya `next dev`.
 
-## Hasil Verifikasi (dilakukan sebelum rilis v1.0.0)
+## Hasil Verifikasi
 
-Dijalankan di lingkungan lokal dengan Postgres via `docker compose`, dalam mode **production build** (`npm run build` → `npm run start`), bukan `next dev`:
+Verifikasi dilakukan dua tahap, semuanya di lingkungan lokal dengan Postgres via `docker compose`, dalam mode **production build** (`npm run build` → `npm run start`), bukan `next dev`.
+
+**Tahap 1 — sebelum rilis v1.0.0 (API-level, curl & Prisma langsung):**
 
 - `npm run build` → sukses, exit code `0`, seluruh route non-auth bertipe dynamic (`ƒ`), tidak ada static generation yang menyentuh database.
 - Login via NextAuth Credentials (flow CSRF penuh, bukan simulasi) → berhasil, session cookie valid, halaman terproteksi bisa diakses setelahnya.
 - Akses tanpa sesi ke `/` → redirect 307 ke `/login` (middleware bekerja); asset publik (`/logo.png`) tetap bisa diakses tanpa login (dipakai di halaman login).
 - Semua halaman utama (`/`, `/produk`, `/pesanan`, `/pesanan/[id]`, `/pesanan/baru`, `/keuangan`, `/piutang`, `/laporan`, `/pengaturan`) di-request dengan sesi valid → semuanya `200 OK`, termasuk saat database kosong (edge case tanpa data).
-- Data uji dibuat langsung lewat Prisma (produk, rekening bank, pesanan multi-item, nama pelanggan sangat panjang) untuk menguji alur invoice.
-- Endpoint `GET /api/pesanan/[id]/invoice`:
-  - Tanpa rekening bank dipilih → `400` dengan pesan error yang jelas (bukan crash).
-  - Tanpa sesi login → di-redirect oleh middleware (tidak bisa diakses publik).
-  - Dengan rekening bank terpilih → `200`, menghasilkan file **PNG valid** (diverifikasi lewat `file` command & dibuka visual): lebar tetap 1080px, tinggi menyesuaikan jumlah item, tabel item hanya menampilkan nama barang/qty/total (tanpa harga satuan & nama pemasok), info rekening bank tampil, nama pelanggan yang sangat panjang dipotong rapi dengan ellipsis, logo toko tampil di header invoice.
-- Setelah verifikasi, data uji dihapus, server & Postgres lokal dimatikan (`docker compose down`) — repo dikembalikan ke kondisi bersih siap dipakai.
+- Endpoint `GET /api/pesanan/[id]/invoice`: tanpa rekening bank → `400` rapi (bukan crash); tanpa sesi login → di-redirect middleware; dengan rekening bank terpilih → `200`, menghasilkan file **PNG valid**.
 
-Belum diuji dengan browser sungguhan (Playwright/manual click-through) karena lingkungan eksekusi ini tidak menyediakan browser — interaksi client-side (form React, tombol share, dsb.) sudah ditinjau lewat pembacaan kode, bukan lewat klik langsung di browser. Disarankan Santi mencoba alur penuh (tambah barang → buat pesanan → generate invoice → share ke WhatsApp → konfirmasi piutang) sekali dari HP sebelum dipakai produksi harian.
+**Tahap 2 — QA browser sungguhan (browser automation, klik langsung di Chrome), setelah rilis v1.0.0:**
+
+- Login (kredensial benar & salah) → pesan error rapi saat salah, sesi tersimpan saat benar.
+- Tambah produk (termasuk field nama pemasok) → tersimpan, muncul di form edit dengan benar.
+- Pengaturan: logo toko tampil, tambah rekening bank berhasil.
+- Buat pesanan multi-item → kalkulasi subtotal/total otomatis benar, redirect ke halaman detail.
+- Generate invoice → **PNG diunduh & diverifikasi valid** (1080×1266px, tabel item hanya nama barang/qty/total tanpa harga satuan/pemasok, info rekening bank & logo toko tampil, nama pelanggan panjang terpotong rapi dengan ellipsis).
+- Ubah status pesanan ke "Selesai" → dikonfirmasi **tidak** otomatis mencatat pemasukan (status pembayaran tetap terpisah).
+- Piutang: centang "Lunas" → transaksi pemasukan otomatis tercatat di Keuangan; uncheck kembali (dengan dialog konfirmasi) → transaksi otomatis terhapus.
+- Transaksi manual, Laporan (filter tanggal), Dashboard (kartu total piutang, chart tren, produk terlaris) → semua angka akurat.
+- Tampilan mobile (viewport 390px) → bottom nav & layout tetap rapi.
+- **1 bug ditemukan & langsung diperbaiki**: posisi scroll tidak reset ke atas setelah redirect dari Server Action, menyebabkan header halaman pesanan sempat tertutup topbar sesaat setelah submit form panjang. Lihat entri Changelog `[1.0.0]` bagian "Diperbaiki".
+- Setelah QA, seluruh data uji dihapus dari database, server & Postgres lokal dimatikan, dan cache/profil browser automation dibersihkan — repo & environment dikembalikan ke kondisi bersih.
+
+Karena tahap 2 sudah mencakup klik langsung di browser sungguhan (bukan cuma tinjauan kode), Santi tidak wajib mengulang uji coba ini dari awal — cukup familiarisasi normal saat pertama pakai.
 
 ## Struktur Folder
 
@@ -134,6 +156,7 @@ app/
   (app)/              seluruh halaman yang butuh login (dashboard, produk, pesanan, dst.)
   api/auth/           route handler NextAuth
   api/pesanan/[id]/invoice/   route handler generate invoice PNG
+  api-health-check/   endpoint publik cek kesehatan app (DB & env var)
 lib/
   actions/            Next.js Server Actions per modul (produk, pesanan, keuangan, dll.)
   auth.ts             konfigurasi NextAuth

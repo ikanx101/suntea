@@ -4,6 +4,7 @@ import { formatRupiah, formatDateTime } from "@/lib/format";
 import StatusControl from "./status-control";
 import PaymentControl from "@/components/payment-control";
 import InvoicePanel from "./invoice-panel";
+import DeleteOrderButton from "@/components/delete-order-button";
 
 export const dynamic = "force-dynamic";
 
@@ -21,10 +22,13 @@ export default async function OrderDetailPage({ params }: { params: { id: string
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <div>
-        <p className="text-sm text-lavender-500">{order.invoiceNumber}</p>
-        <h1 className="font-heading text-2xl font-bold text-hotpink-700">{order.customerName}</h1>
-        <p className="text-sm text-lavender-500">{order.customerWhatsapp}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm text-lavender-500">{order.invoiceNumber}</p>
+          <h1 className="font-heading text-2xl font-bold text-hotpink-700">{order.customerName}</h1>
+          <p className="text-sm text-lavender-500">{order.customerWhatsapp}</p>
+        </div>
+        <DeleteOrderButton orderId={order.id} invoiceNumber={order.invoiceNumber} redirectTo="/pesanan" label="Hapus" />
       </div>
 
       <div className="card flex flex-wrap items-center justify-between gap-3">

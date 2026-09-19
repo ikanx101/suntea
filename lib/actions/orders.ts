@@ -91,6 +91,21 @@ export async function updateOrderStatus(orderId: string, status: "NEW" | "PROCES
   revalidatePath("/");
 }
 
+export async function deleteOrder(orderId: string) {
+  await requireSession();
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error("Pesanan tidak ditemukan");
+
+  // OrderItem & Transaction terkait ikut terhapus otomatis (onDelete: Cascade di schema).
+  await prisma.order.delete({ where: { id: orderId } });
+
+  revalidatePath("/pesanan");
+  revalidatePath("/piutang");
+  revalidatePath("/keuangan");
+  revalidatePath("/laporan");
+  revalidatePath("/");
+}
+
 export async function setOrderBankAccount(orderId: string, bankAccountId: string) {
   await requireSession();
   const bank = await prisma.bankAccount.findUnique({ where: { id: bankAccountId } });

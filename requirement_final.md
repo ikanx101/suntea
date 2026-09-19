@@ -57,6 +57,8 @@ Dari satu pesanan, sistem dapat:
 - **Generate invoice dalam format PNG** yang bisa langsung diunduh/dibagikan via WhatsApp (lihat bagian 6).
 - Saat status pembayaran suatu pesanan dikonfirmasi menjadi **Lunas** (lihat bagian 4.8), sistem otomatis mencatat transaksi **pemasukan** sejumlah total pesanan ke modul Keuangan (lihat 4.4), supaya Santi tidak perlu input dua kali. Jika konfirmasi ini dibatalkan (dikembalikan ke Belum Lunas, misal salah klik), transaksi pemasukan terkait otomatis ikut dihapus.
 
+Berbeda dari Produk dan Rekening Bank (yang hanya bisa diarsipkan, tidak dihapus permanen), **pesanan/invoice bisa dihapus permanen** oleh Santi — dari daftar Pesanan, halaman detail pesanan, maupun dari baris transaksinya di Keuangan. Menghapus pesanan otomatis ikut menghapus transaksi pemasukan yang tertaut (jika sudah Lunas). Karena sifatnya permanen & tidak bisa dibatalkan, sistem WAJIB menampilkan popup konfirmasi sebelum benar-benar menghapus.
+
 ### 4.4 Manajemen Keuangan (Kas Masuk & Keluar)
 Buku kas sederhana berisi daftar transaksi:
 - Tanggal

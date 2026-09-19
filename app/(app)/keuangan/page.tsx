@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { formatRupiah, formatDate } from "@/lib/format";
 import TransactionForm from "./transaction-form";
 import DeleteTransactionButton from "./delete-transaction-button";
+import DeleteOrderButton from "@/components/delete-order-button";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,9 @@ export default async function KeuanganPage() {
                         {formatRupiah(t.amount)}
                       </span>
                       {t.source === "MANUAL" && <DeleteTransactionButton id={t.id} />}
+                      {t.source === "ORDER" && t.order && (
+                        <DeleteOrderButton orderId={t.order.id} invoiceNumber={t.order.invoiceNumber} />
+                      )}
                     </div>
                   </div>
                 ))}

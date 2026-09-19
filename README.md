@@ -4,11 +4,21 @@ Webapp privat untuk mencatat produk, pesanan, invoice, keuangan (kas masuk/kelua
 
 ## Versi
 
-**v1.0.3** — rilis percobaan pertama, sudah mendapat beberapa perbaikan reliabilitas deploy (termasuk satu bug kritis: loop redirect saat login di Railway) dan koreksi timezone.
+**v1.0.4** — rilis percobaan pertama, sudah mendapat beberapa perbaikan reliabilitas deploy (termasuk satu bug kritis: loop redirect saat login di Railway), koreksi timezone, dan fitur hapus invoice.
 
 ### Changelog
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/).
+
+#### [1.0.4] - 2026-09-19
+
+Ditambahkan:
+
+- **Hapus invoice/pesanan** — Santi bisa menghapus pesanan secara permanen dari 3 tempat: daftar Pesanan (`/pesanan`), halaman detail pesanan, dan baris transaksi hasil pesanan di Keuangan (`/keuangan`). Menghapus pesanan otomatis ikut menghapus item pesanan & transaksi Keuangan yang tertaut (lewat `onDelete: Cascade` di skema database), supaya tidak ada data yang menggantung. Setiap aksi hapus **wajib konfirmasi lewat popup** sebelum benar-benar terhapus, dan bisa dibatalkan (tindakan batal sudah diverifikasi lewat override `window.confirm`, karena tool QA otomatis tidak bisa mensimulasikan klik "Batal" pada dialog native browser). Transaksi manual (non-invoice) di Keuangan sudah bisa dihapus sejak awal (fitur lama, tidak berubah).
+
+Diperbaiki:
+
+- **Format jam dibuat eksplisit 24 jam** (`hour12: false`) di `formatDateTime` — sebelumnya sudah berperilaku 24 jam secara default untuk locale `id-ID`, tapi sekarang dijadikan eksplisit di kode supaya tidak bergantung pada perilaku default locale yang bisa saja berbeda di lingkungan/versi Node lain.
 
 #### [1.0.3] - 2026-09-19
 

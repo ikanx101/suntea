@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatRupiah, formatDate } from "@/lib/format";
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/badges";
+import DeleteOrderButton from "@/components/delete-order-button";
 import type { OrderStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -66,6 +67,7 @@ export default async function PesananPage({ searchParams }: { searchParams: { st
                 <OrderStatusBadge status={order.status} />
                 <PaymentStatusBadge status={order.paymentStatus} />
                 <span className="font-heading font-bold text-hotpink-700">{formatRupiah(order.total)}</span>
+                <DeleteOrderButton orderId={order.id} invoiceNumber={order.invoiceNumber} />
               </div>
             </Link>
           ))}

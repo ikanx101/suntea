@@ -4,11 +4,17 @@ Webapp privat untuk mencatat produk, pesanan, invoice, keuangan (kas masuk/kelua
 
 ## Versi
 
-**v1.0.2** — rilis percobaan pertama, sudah mendapat beberapa perbaikan reliabilitas deploy (termasuk satu bug kritis: loop redirect saat login di Railway).
+**v1.0.3** — rilis percobaan pertama, sudah mendapat beberapa perbaikan reliabilitas deploy (termasuk satu bug kritis: loop redirect saat login di Railway) dan koreksi timezone.
 
 ### Changelog
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/).
+
+#### [1.0.3] - 2026-09-19
+
+Diperbaiki:
+
+- **Jam di invoice & tanggal pesanan mengikuti timezone server, bukan WIB** — sebelumnya `formatDate`/`formatDateTime` (`lib/format.ts`) memformat tanggal/jam tanpa menentukan timezone eksplisit, jadi hasilnya ikut timezone server tempat aplikasi jalan. Di lokal (timezone developer kebetulan WIB) tampilannya benar, tapi begitu dideploy ke Railway (server berjalan di UTC), jam yang tampil mundur 7 jam dari WIB (misal invoice yang seharusnya "pukul 07.00" WIB tertulis "pukul 00.00"). Diperbaiki dengan menambahkan `timeZone: "Asia/Jakarta"` eksplisit ke kedua formatter, sehingga tanggal & jam di invoice, halaman pesanan, dll. selalu tampil WIB tidak peduli timezone server. Sudah diverifikasi dengan menjalankan server secara lokal dalam mode `TZ=UTC` (mensimulasikan Railway) dan mengecek invoice PNG yang dihasilkan.
 
 #### [1.0.2] - 2026-09-19
 

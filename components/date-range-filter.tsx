@@ -34,7 +34,7 @@ export default function DateRangeFilter() {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="flex gap-1 rounded-2xl bg-lavender-50 p-1">
+      <div className="flex gap-1 rounded-2xl bg-ocean-50 p-1">
         {PRESETS.map((p) => (
           <button
             key={p.value}
@@ -42,7 +42,7 @@ export default function DateRangeFilter() {
             onClick={() => applyPreset(p.value)}
             className={clsx(
               "rounded-xl px-3 py-1.5 text-sm font-semibold transition",
-              activePreset === p.value ? "bg-white text-hotpink-600 shadow-sm" : "text-lavender-600",
+              activePreset === p.value ? "bg-white text-turquoise-600 shadow-sm" : "text-ocean-600",
             )}
           >
             {p.label}
@@ -54,14 +54,14 @@ export default function DateRangeFilter() {
           type="date"
           defaultValue={from}
           onChange={(e) => applyCustomRange(e.target.value, to || e.target.value)}
-          className="rounded-xl border-2 border-lavender-100 px-2 py-1.5"
+          className="rounded-xl border-2 border-ocean-100 px-2 py-1.5"
         />
-        <span className="text-lavender-400">s/d</span>
+        <span className="text-ocean-400">s/d</span>
         <input
           type="date"
           defaultValue={to}
           onChange={(e) => applyCustomRange(from || e.target.value, e.target.value)}
-          className="rounded-xl border-2 border-lavender-100 px-2 py-1.5"
+          className="rounded-xl border-2 border-ocean-100 px-2 py-1.5"
         />
       </div>
     </div>

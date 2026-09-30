@@ -106,22 +106,67 @@ export async function deleteOrder(orderId: string) {
   revalidatePath("/");
 }
 
-export async function setOrderBankAccount(orderId: string, bankAccountId: string) {
+export async function saveInvoiceSettings(
+  orderId: string,
+  bankAccountId: string,
+  shippingCost: number,
+): Promise<{ error?: string }> {
   await requireSession();
-  const bank = await prisma.bankAccount.findUnique({ where: { id: bankAccountId } });
-  if (!bank) throw new Error("Rekening tidak ditemukan");
 
-  await prisma.order.update({
-    where: { id: orderId },
-    data: {
-      bankAccountId: bank.id,
-      bankNameSnapshot: bank.bankName,
-      accountNumberSnapshot: bank.accountNumber,
-      accountHolderSnapshot: bank.accountHolderName,
-    },
+  const parsed = z
+    .object({
+      bankAccountId: z.string().min(1, "Rekening wajib dipilih"),
+      shippingCost: z
+        .number({ error: "Nilai ongkir harus berupa angka" })
+        .int("Nilai ongkir harus bilangan bulat")
+        .min(0, "Nilai ongkir tidak boleh negatif")
+        .max(1_000_000_000, "Nilai ongkir terlalu besar"),
+    })
+    .safeParse({ bankAccountId, shippingCost });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Data tidak valid" };
+  }
+
+  const bank = await prisma.bankAccount.findUnique({ where: { id: parsed.data.bankAccountId } });
+  if (!bank) return { error: "Rekening tidak ditemukan" };
+
+  const order = await prisma.order.findUnique({ where: { id: orderId }, include: { items: true } });
+  if (!order) return { error: "Pesanan tidak ditemukan" };
+
+  const itemsSubtotal = order.items.reduce((sum, item) => sum + item.subtotal, 0);
+  const total = itemsSubtotal + parsed.data.shippingCost;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.order.update({
+      where: { id: orderId },
+      data: {
+        bankAccountId: bank.id,
+        bankNameSnapshot: bank.bankName,
+        accountNumberSnapshot: bank.accountNumber,
+        accountHolderSnapshot: bank.accountHolderName,
+        shippingCost: parsed.data.shippingCost,
+        total,
+      },
+    });
+
+    // Kalau pembayaran sudah ditandai lunas, nominal transaksi ikut disesuaikan
+    // supaya buku kas tidak beda dengan invoice yang dikirim ke pembeli.
+    if (order.paymentStatus === "PAID") {
+      await tx.transaction.updateMany({
+        where: { orderId, source: "ORDER" },
+        data: { amount: total },
+      });
+    }
   });
 
   revalidatePath(`/pesanan/${orderId}`);
+  revalidatePath("/pesanan");
+  revalidatePath("/piutang");
+  revalidatePath("/keuangan");
+  revalidatePath("/laporan");
+  revalidatePath("/");
+  return {};
 }
 
 export async function togglePaymentStatus(orderId: string, paid: boolean) {

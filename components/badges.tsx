@@ -9,8 +9,8 @@ const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
 };
 
 const ORDER_STATUS_CLASS: Record<OrderStatus, string> = {
-  NEW: "bg-lavender-100 text-lavender-700",
-  PROCESSING: "bg-hotpink-100 text-hotpink-700",
+  NEW: "bg-ocean-100 text-ocean-700",
+  PROCESSING: "bg-turquoise-100 text-turquoise-700",
   DONE: "bg-mint-100 text-mint-700",
   CANCELLED: "bg-gray-200 text-gray-600",
 };
@@ -25,7 +25,7 @@ const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
 };
 
 const PAYMENT_STATUS_CLASS: Record<PaymentStatus, string> = {
-  UNPAID: "bg-coral-100 text-coral-700",
+  UNPAID: "bg-rose-100 text-rose-700",
   PAID: "bg-mint-100 text-mint-700",
 };
 

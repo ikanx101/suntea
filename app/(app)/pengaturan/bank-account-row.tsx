@@ -36,7 +36,7 @@ export default function BankAccountRow({ bank }: { bank: BankAccount }) {
 
   if (editing) {
     return (
-      <form action={formAction} className="space-y-3 rounded-2xl bg-lavender-50 p-4">
+      <form action={formAction} className="space-y-3 rounded-2xl bg-ocean-50 p-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <input name="bankName" defaultValue={bank.bankName} required className="input" placeholder="Nama bank" />
           <input name="accountNumber" defaultValue={bank.accountNumber} required className="input" placeholder="No. rekening" />
@@ -48,7 +48,7 @@ export default function BankAccountRow({ bank }: { bank: BankAccount }) {
             placeholder="Nama pemilik"
           />
         </div>
-        {state?.error && <p className="text-sm font-medium text-coral-600">{state.error}</p>}
+        {state?.error && <p className="text-sm font-medium text-rose-600">{state.error}</p>}
         <div className="flex gap-2">
           <SaveButton />
           <button type="button" onClick={() => setEditing(false)} className="btn-secondary !px-4 !py-2 text-sm">
@@ -60,12 +60,12 @@ export default function BankAccountRow({ bank }: { bank: BankAccount }) {
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl bg-lavender-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-2 rounded-2xl bg-ocean-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p className="font-semibold text-hotpink-800">
+        <p className="font-semibold text-turquoise-800">
           {bank.bankName} {!bank.isActive && <span className="badge ml-2 bg-gray-200 text-gray-600">Nonaktif</span>}
         </p>
-        <p className="text-sm text-lavender-600">
+        <p className="text-sm text-ocean-600">
           {bank.accountNumber} a/n {bank.accountHolderName}
         </p>
       </div>

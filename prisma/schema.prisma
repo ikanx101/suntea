@@ -56,6 +56,7 @@ model Order {
   paidAt                DateTime?
   note                  String?
   orderDate             DateTime      @default(now())
+  shippingCost          Int           @default(0)
   total                 Int
   bankAccountId         String?
   bankNameSnapshot      String?

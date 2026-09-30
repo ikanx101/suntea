@@ -42,7 +42,7 @@ export default function StoreSettingsForm({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={preview} alt="Logo" className="h-16 w-16 rounded-2xl object-cover shadow-sm" />
           ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-lavender-100 text-xs text-lavender-400">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-ocean-100 text-xs text-ocean-400">
               Tanpa logo
             </div>
           )}
@@ -59,7 +59,7 @@ export default function StoreSettingsForm({
                 reader.onload = () => setPreview(reader.result as string);
                 reader.readAsDataURL(file);
               }}
-              className="text-sm text-lavender-600"
+              className="text-sm text-ocean-600"
             />
             {logoDataUrl && (
               <button
@@ -71,17 +71,17 @@ export default function StoreSettingsForm({
                   setPreview(null);
                   setRemoving(false);
                 }}
-                className="text-xs font-semibold text-coral-500 underline"
+                className="text-xs font-semibold text-rose-500 underline"
               >
                 Hapus logo saat ini
               </button>
             )}
           </div>
         </div>
-        <p className="mt-1 text-xs text-lavender-400">Maksimal 1.5MB. Logo ini juga dipakai di invoice.</p>
+        <p className="mt-1 text-xs text-ocean-400">Maksimal 1.5MB. Logo ini juga dipakai di invoice.</p>
       </div>
 
-      {state?.error && <p className="text-sm font-medium text-coral-600">{state.error}</p>}
+      {state?.error && <p className="text-sm font-medium text-rose-600">{state.error}</p>}
       {state?.success && <p className="text-sm font-medium text-mint-600">{state.success}</p>}
 
       <SubmitButton />

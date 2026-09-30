@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #fffaf3;
-  --foreground: #7d0f46;
+  --background: #f2fbfa;
+  --foreground: #115e5c;
   --font-heading: theme(fontFamily.heading);
   --font-body: theme(fontFamily.body);
 }
@@ -26,25 +26,25 @@ h1, h2, h3, h4, h5, h6 {
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-hotpink-500 to-coral-400 px-5 py-2.5 font-semibold text-white shadow-md transition hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100;
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-turquoise-500 to-aqua-400 px-5 py-2.5 font-semibold text-white shadow-md transition hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-lavender-300 bg-white px-5 py-2.5 font-semibold text-lavender-700 transition hover:bg-lavender-50 active:scale-[0.98] disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-ocean-300 bg-white px-5 py-2.5 font-semibold text-ocean-700 transition hover:bg-ocean-50 active:scale-[0.98] disabled:opacity-50;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2 font-medium text-hotpink-700 transition hover:bg-hotpink-50 active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2 font-medium text-turquoise-700 transition hover:bg-turquoise-50 active:scale-[0.98];
   }
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-coral-500 px-4 py-2 font-semibold text-white transition hover:bg-coral-600 active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-rose-500 px-4 py-2 font-semibold text-white transition hover:bg-rose-600 active:scale-[0.98];
   }
   .card {
-    @apply rounded-3xl border border-hotpink-100 bg-white p-5 shadow-sm;
+    @apply rounded-3xl border border-turquoise-100 bg-white p-5 shadow-sm;
   }
   .input {
-    @apply w-full rounded-2xl border-2 border-lavender-100 bg-white px-4 py-2.5 text-hotpink-900 outline-none transition focus:border-hotpink-300;
+    @apply w-full rounded-2xl border-2 border-ocean-100 bg-white px-4 py-2.5 text-turquoise-900 outline-none transition focus:border-turquoise-300 focus:ring-0;
   }
   .label {
-    @apply mb-1 block text-sm font-semibold text-lavender-700;
+    @apply mb-1 block text-sm font-semibold text-ocean-700;
   }
   .badge {
     @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-bold;

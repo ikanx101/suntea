@@ -11,9 +11,9 @@ export default async function NewOrderPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
-      <h1 className="font-heading text-2xl font-bold text-hotpink-700">Tambah Pesanan Baru</h1>
+      <h1 className="font-heading text-2xl font-bold text-turquoise-700">Tambah Pesanan Baru</h1>
       {products.length === 0 ? (
-        <p className="card text-lavender-500">
+        <p className="card text-ocean-500">
           Belum ada produk aktif. Tambahkan produk terlebih dahulu di menu Produk.
         </p>
       ) : (

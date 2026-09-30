@@ -14,15 +14,15 @@ export default async function PengaturanPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="font-heading text-2xl font-bold text-hotpink-700">Pengaturan</h1>
+      <h1 className="font-heading text-2xl font-bold text-turquoise-700">Pengaturan</h1>
 
       <div className="card">
-        <h2 className="mb-4 font-heading text-lg font-bold text-hotpink-700">Branding Toko</h2>
+        <h2 className="mb-4 font-heading text-lg font-bold text-turquoise-700">Branding Toko</h2>
         <StoreSettingsForm storeName={settings?.storeName ?? "Toko Santi Irawati"} logoDataUrl={settings?.logoDataUrl ?? null} />
       </div>
 
       <div className="card space-y-4">
-        <h2 className="font-heading text-lg font-bold text-hotpink-700">Rekening Bank</h2>
+        <h2 className="font-heading text-lg font-bold text-turquoise-700">Rekening Bank</h2>
         <div className="space-y-3">
           {bankAccounts.map((bank) => (
             <BankAccountRow key={bank.id} bank={bank} />
@@ -32,7 +32,7 @@ export default async function PengaturanPage() {
       </div>
 
       <div className="card">
-        <h2 className="mb-4 font-heading text-lg font-bold text-hotpink-700">Ganti Password</h2>
+        <h2 className="mb-4 font-heading text-lg font-bold text-turquoise-700">Ganti Password</h2>
         <ChangePasswordForm />
       </div>
     </div>

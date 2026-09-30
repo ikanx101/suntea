@@ -63,11 +63,11 @@ export default function LoginForm() {
           autoComplete="current-password"
         />
       </div>
-      {error && <p className="text-sm font-medium text-coral-600">{error}</p>}
+      {error && <p className="text-sm font-medium text-rose-600">{error}</p>}
       <button type="submit" disabled={loading} className="btn-primary w-full">
         {loading ? "Memproses..." : "Masuk"}
       </button>
-      <p className="text-center text-xs text-lavender-500">
+      <p className="text-center text-xs text-ocean-500">
         Sesi login akan tetap aktif selama 30 hari di perangkat ini.
       </p>
     </form>

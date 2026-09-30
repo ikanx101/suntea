@@ -29,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body className={`${baloo.variable} ${nunito.variable} font-body antialiased bg-cream text-hotpink-900`}>
+      <body className={`${baloo.variable} ${nunito.variable} font-body antialiased bg-turquoise-50 text-turquoise-900`}>
         {children}
       </body>
     </html>

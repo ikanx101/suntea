@@ -66,7 +66,7 @@ export default function ProductForm({ product }: { product?: Product }) {
         </div>
         <div>
           <label className="label" htmlFor="supplierName">
-            Nama Pemasok <span className="font-normal text-lavender-400">(internal, tidak tampil di invoice)</span>
+            Nama Pemasok <span className="font-normal text-ocean-400">(internal, tidak tampil di invoice)</span>
           </label>
           <input id="supplierName" name="supplierName" defaultValue={product?.supplierName ?? ""} className="input" />
         </div>
@@ -103,7 +103,7 @@ export default function ProductForm({ product }: { product?: Product }) {
         </div>
       </div>
 
-      {state?.error && <p className="text-sm font-medium text-coral-600">{state.error}</p>}
+      {state?.error && <p className="text-sm font-medium text-rose-600">{state.error}</p>}
 
       <div className="flex gap-3">
         <SubmitButton label={product ? "Simpan Perubahan" : "Tambah Barang"} />

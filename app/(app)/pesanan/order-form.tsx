@@ -115,7 +115,7 @@ export default function OrderForm({ products }: { products: Product[] }) {
           {items.map((item) => {
             const product = products.find((p) => p.id === item.productId);
             return (
-              <div key={item.key} className="flex flex-col gap-2 rounded-2xl bg-lavender-50/60 p-3 sm:flex-row sm:items-center">
+              <div key={item.key} className="flex flex-col gap-2 rounded-2xl bg-ocean-50/60 p-3 sm:flex-row sm:items-center">
                 <select
                   className="input flex-1"
                   value={item.productId}
@@ -136,13 +136,13 @@ export default function OrderForm({ products }: { products: Product[] }) {
                   onChange={(e) => updateItem(item.key, { qty: Math.max(1, Number(e.target.value)) })}
                 />
                 <div className="flex items-center justify-between gap-2 sm:justify-end">
-                  <span className="text-sm font-semibold text-hotpink-700 sm:w-32 sm:text-right">
+                  <span className="text-sm font-semibold text-turquoise-700 sm:w-32 sm:text-right">
                     {product ? formatRupiah(product.sellPrice * item.qty) : "-"}
                   </span>
                   <button
                     type="button"
                     onClick={() => removeItem(item.key)}
-                    className="rounded-xl p-2 text-coral-500 hover:bg-coral-50"
+                    className="rounded-xl p-2 text-rose-500 hover:bg-rose-50"
                     aria-label="Hapus baris"
                   >
                     <Trash2 size={16} />
@@ -164,12 +164,12 @@ export default function OrderForm({ products }: { products: Product[] }) {
         <textarea id="note" className="input" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
       </div>
 
-      <div className="flex items-center justify-between rounded-2xl bg-hotpink-50 px-4 py-3">
-        <span className="font-semibold text-hotpink-700">Total Tagihan</span>
-        <span className="font-heading text-xl font-bold text-hotpink-700">{formatRupiah(total)}</span>
+      <div className="flex items-center justify-between rounded-2xl bg-turquoise-50 px-4 py-3">
+        <span className="font-semibold text-turquoise-700">Total Tagihan</span>
+        <span className="font-heading text-xl font-bold text-turquoise-700">{formatRupiah(total)}</span>
       </div>
 
-      {error && <p className="text-sm font-medium text-coral-600">{error}</p>}
+      {error && <p className="text-sm font-medium text-rose-600">{error}</p>}
 
       <button type="submit" disabled={pending} className="btn-primary w-full sm:w-auto">
         {pending ? "Menyimpan..." : "Simpan Pesanan"}

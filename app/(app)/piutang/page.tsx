@@ -44,17 +44,17 @@ export default async function PiutangPage({
 
   return (
     <div className="space-y-5">
-      <h1 className="font-heading text-2xl font-bold text-hotpink-700">Konfirmasi Pembayaran (Piutang)</h1>
+      <h1 className="font-heading text-2xl font-bold text-turquoise-700">Konfirmasi Pembayaran (Piutang)</h1>
 
-      <div className="card flex items-center gap-3 border-coral-200 bg-coral-50">
-        <div className="rounded-2xl bg-coral-500 p-3 text-white">
+      <div className="card flex items-center gap-3 border-rose-200 bg-rose-50">
+        <div className="rounded-2xl bg-rose-500 p-3 text-white">
           <AlertCircle size={22} />
         </div>
         <div>
-          <p className="font-semibold text-coral-700">
+          <p className="font-semibold text-rose-700">
             {unpaidAll.length} invoice belum lunas — total {formatRupiah(totalPiutang)}
           </p>
-          <p className="text-sm text-coral-500">Centang invoice yang uangnya sudah diterima agar tidak terlewat.</p>
+          <p className="text-sm text-rose-500">Centang invoice yang uangnya sudah diterima agar tidak terlewat.</p>
         </div>
       </div>
 
@@ -65,7 +65,7 @@ export default async function PiutangPage({
               key={t.value}
               href={`/piutang?tab=${t.value}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
               className={`rounded-2xl px-4 py-2 text-sm font-semibold transition ${
-                tab === t.value ? "bg-hotpink-500 text-white shadow" : "bg-lavender-50 text-lavender-600"
+                tab === t.value ? "bg-turquoise-500 text-white shadow" : "bg-ocean-50 text-ocean-600"
               }`}
             >
               {t.label}
@@ -82,21 +82,21 @@ export default async function PiutangPage({
       </div>
 
       {orders.length === 0 ? (
-        <p className="card text-center text-lavender-500">Tidak ada invoice yang cocok.</p>
+        <p className="card text-center text-ocean-500">Tidak ada invoice yang cocok.</p>
       ) : (
         <div className="space-y-3">
           {orders.map((order) => (
             <div key={order.id} className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <Link href={`/pesanan/${order.id}`} className="font-heading font-bold text-hotpink-800 hover:underline">
+                <Link href={`/pesanan/${order.id}`} className="font-heading font-bold text-turquoise-800 hover:underline">
                   {order.customerName}
                 </Link>
-                <p className="text-xs text-lavender-500">
+                <p className="text-xs text-ocean-500">
                   {order.invoiceNumber} · {formatDate(order.orderDate)}
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="font-heading font-bold text-hotpink-700">{formatRupiah(order.total)}</span>
+                <span className="font-heading font-bold text-turquoise-700">{formatRupiah(order.total)}</span>
                 <PaymentControl orderId={order.id} paymentStatus={order.paymentStatus} />
               </div>
             </div>

@@ -29,7 +29,7 @@ export default function PaymentControl({
   }
 
   return (
-    <label className="flex cursor-pointer items-center gap-2 rounded-2xl bg-lavender-50 px-4 py-2">
+    <label className="flex cursor-pointer items-center gap-2 rounded-2xl bg-ocean-50 px-4 py-2">
       <input
         type="checkbox"
         checked={isPaid}
@@ -37,7 +37,7 @@ export default function PaymentControl({
         onChange={toggle}
         className="h-5 w-5 accent-mint-500"
       />
-      <span className="font-semibold text-lavender-700">{isPaid ? "Lunas" : "Tandai sebagai Lunas"}</span>
+      <span className="font-semibold text-ocean-700">{isPaid ? "Lunas" : "Tandai sebagai Lunas"}</span>
     </label>
   );
 }

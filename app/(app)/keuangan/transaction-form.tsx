@@ -41,7 +41,7 @@ export default function TransactionForm() {
           <label
             key={t}
             className={`flex-1 cursor-pointer rounded-2xl border-2 px-4 py-2 text-center font-semibold transition ${
-              type === t ? (t === "IN" ? "border-mint-400 bg-mint-50 text-mint-700" : "border-coral-400 bg-coral-50 text-coral-700") : "border-lavender-100 text-lavender-500"
+              type === t ? (t === "IN" ? "border-mint-400 bg-mint-50 text-mint-700" : "border-rose-400 bg-rose-50 text-rose-700") : "border-ocean-100 text-ocean-500"
             }`}
           >
             <input type="radio" name="type" value={t} checked={type === t} onChange={() => setType(t)} className="hidden" />
@@ -85,7 +85,7 @@ export default function TransactionForm() {
         <input id="description" name="description" className="input" />
       </div>
 
-      {state?.error && <p className="text-sm font-medium text-coral-600">{state.error}</p>}
+      {state?.error && <p className="text-sm font-medium text-rose-600">{state.error}</p>}
 
       <SubmitButton />
     </form>

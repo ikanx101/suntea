@@ -4,11 +4,29 @@ Webapp privat untuk mencatat produk, pesanan, invoice, keuangan (kas masuk/kelua
 
 ## Versi
 
-**v1.0.4** — rilis percobaan pertama, sudah mendapat beberapa perbaikan reliabilitas deploy (termasuk satu bug kritis: loop redirect saat login di Railway), koreksi timezone, dan fitur hapus invoice.
+**v1.1.0** — tema warna aplikasi & invoice diganti turquoise, plus dukungan ongkos kirim pada invoice/pesanan.
 
 ### Changelog
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/).
+
+#### [1.1.0] - 2026-09-30
+
+Diubah:
+
+- **Tema warna aplikasi diganti menjadi bernuansa turquoise** — palet pink/lavender/coral/krem pada `tailwind.config.ts` diganti palet baru (`turquoise`, `aqua`, `ocean`, `mint`), dan seluruh kelas warna di `app/`, `components/`, `lib/` disesuaikan. Tombol utama kini gradien turquoise, latar halaman `#f2fbfa`, teks utama `#115e5c`. Warna merah (`rose-*`) **sengaja dipertahankan** untuk makna fungsional: tombol hapus, pesan galat, dan penanda "belum lunas".
+- **Warna invoice PNG ikut bernuansa turquoise** — `lib/invoice-image.tsx` memakai gradien header `#17b3aa → #22d3ee`, latar `#f2fbfa`, kartu ringkasan `#d3f9f4`, dan aksen `#0e918c` untuk judul blok. Diverifikasi lewat analisis piksel hasil render: 99.832 piksel turquoise, sisa 8 piksel merah hanya dari anti-aliasing.
+- **Teks penutup invoice** diubah menjadi: *"Terima kasih telah berbelanja. Semoga Allah berkahi muamalah yang kita lakukan."*
+
+Ditambahkan:
+
+- **Konfirmasi ongkir saat membuat invoice** — di panel Invoice pada halaman detail pesanan sekarang muncul pertanyaan "Ada ongkir pada transaksi ini?" dengan dua pilihan: **Tidak ada** / **Ada ongkir**. Bila "Ada ongkir" dipilih, Santi mengisi nilai ongkir (Rupiah) dan nilai itu **langsung menambah total tagihan** (contoh: subtotal Rp 90.000 + ongkir Rp 30.000 = total Rp 120.000), lalu ikut tersimpan ke data pesanan (`Order.shippingCost`) dan ditampilkan di baris "Ongkos Kirim" pada halaman pesanan, panel invoice, dan invoice PNG. Bila tidak ada ongkir, baris "Ongkos Kirim" **tidak ditampilkan sama sekali** dan tinggi invoice PNG otomatis menyesuaikan (ada ongkir: 1484 px, tanpa ongkir: 1243 px).
+  - Skema database bertambah kolom `Order.shippingCost` (default `0`) lewat migrasi `20260930190000_add_shipping_cost`. Migrasi ini aman untuk data lama: pesanan yang sudah ada otomatis bernilai 0 (dianggap tanpa ongkir).
+
+Diverifikasi dengan:
+
+- `tsc --noEmit` tanpa galat, `next lint` bersih, `next build` sukses, dan `prisma migrate status` melaporkan skema sudah up to date.
+- QA browser (Playwright, login sampai halaman pesanan): pertanyaan ongkir tampil, mode "Tidak ada" menyembunyikan kolom ongkir, mode "Ada ongkir" menyimpan nilai dan menaikkan total, serta generate invoice PNG (dengan & tanpa ongkir) berhasil 200 tanpa error konsol. Isi invoice PNG diperiksa ulang dengan OCR.
 
 #### [1.0.4] - 2026-09-19
 

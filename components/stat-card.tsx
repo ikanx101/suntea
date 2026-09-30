@@ -5,20 +5,20 @@ export default function StatCard({
   label,
   value,
   icon: Icon,
-  tone = "pink",
+  tone = "turquoise",
   hint,
 }: {
   label: string;
   value: string;
   icon: LucideIcon;
-  tone?: "pink" | "mint" | "lavender" | "coral";
+  tone?: "turquoise" | "mint" | "ocean" | "rose";
   hint?: string;
 }) {
   const toneClasses: Record<string, string> = {
-    pink: "from-hotpink-500 to-hotpink-400",
+    turquoise: "from-turquoise-500 to-aqua-400",
     mint: "from-mint-500 to-mint-400",
-    lavender: "from-lavender-500 to-lavender-400",
-    coral: "from-coral-500 to-coral-400",
+    ocean: "from-ocean-600 to-ocean-400",
+    rose: "from-rose-500 to-rose-400",
   };
 
   return (
@@ -27,9 +27,9 @@ export default function StatCard({
         <Icon size={22} />
       </div>
       <div>
-        <p className="text-sm font-medium text-lavender-500">{label}</p>
-        <p className="font-heading text-xl font-bold text-hotpink-800">{value}</p>
-        {hint && <p className="mt-0.5 text-xs text-lavender-400">{hint}</p>}
+        <p className="text-sm font-medium text-ocean-500">{label}</p>
+        <p className="font-heading text-xl font-bold text-turquoise-800">{value}</p>
+        {hint && <p className="mt-0.5 text-xs text-ocean-400">{hint}</p>}
       </div>
     </div>
   );

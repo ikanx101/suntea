@@ -43,7 +43,7 @@ export default function ChangePasswordForm() {
         </label>
         <input id="confirmPassword" name="confirmPassword" type="password" required minLength={6} className="input" />
       </div>
-      {state?.error && <p className="text-sm font-medium text-coral-600">{state.error}</p>}
+      {state?.error && <p className="text-sm font-medium text-rose-600">{state.error}</p>}
       {state?.success && <p className="text-sm font-medium text-mint-600">{state.success}</p>}
       <SubmitButton />
     </form>

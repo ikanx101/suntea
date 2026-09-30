@@ -26,6 +26,11 @@ export type InvoiceData = {
   customerName: string;
   customerWhatsapp: string;
   items: { name: string; qty: number; total: number }[];
+  /** Jumlah harga barang sebelum ongkir. */
+  itemsSubtotal: number;
+  /** Nilai ongkir; 0 berarti tidak ada ongkir. */
+  shippingCost: number;
+  /** Total tagihan = itemsSubtotal + shippingCost. */
   total: number;
   bankName: string;
   accountNumber: string;
@@ -35,23 +40,44 @@ export type InvoiceData = {
 
 const WIDTH = 1080;
 
+// Palet invoice — senada dengan tema turquoise aplikasi.
+const C = {
+  pageBg: "#f2fbfa",
+  headerFrom: "#17b3aa",
+  headerTo: "#22d3ee",
+  cardBorder: "#d3f9f4",
+  line: "#a8f2e9",
+  tableHead: "#17b3aa",
+  rowAlt: "#f0fcfa",
+  ink: "#124d4c",
+  inkStrong: "#115e5c",
+  accent: "#0f7471",
+  soft: "#327187",
+  softBg: "#f2f9fa",
+  softInk: "#27414e",
+  noteBg: "#ecfeff",
+  noteTitle: "#0e7490",
+  noteInk: "#164e63",
+  footerBg: "#e9f9f7",
+  footerTitle: "#0e918c",
+  summaryBg: "#d3f9f4",
+};
+
 export async function renderInvoicePng(data: InvoiceData): Promise<Buffer> {
   const fonts = loadFonts();
 
-  const rowHeight = 66;
-  const baseHeight = 1130;
-  const noteLines = data.note ? Math.max(1, Math.ceil(data.note.length / 48)) : 0;
-  const noteHeight = data.note ? 40 + 30 * noteLines : 0;
-  const height = baseHeight + data.items.length * rowHeight + noteHeight;
+  const hasShipping = data.shippingCost > 0;
 
+  // Tinggi kanvas TIDAK dipatok: satori menghitung sendiri sesuai isi
+  // (jumlah barang, ada/tidaknya baris ongkir, dan panjang catatan).
+  // Ini mencegah bagian bawah invoice (baris ucapan terakhir) terpotong.
   const markup = (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
         width: WIDTH,
-        height,
-        backgroundColor: "#fffaf3",
+        backgroundColor: C.pageBg,
         fontFamily: "Nunito",
         padding: 0,
       }}
@@ -61,7 +87,7 @@ export async function renderInvoicePng(data: InvoiceData): Promise<Buffer> {
           display: "flex",
           flexDirection: "column",
           padding: "48px 56px 32px 56px",
-          background: "linear-gradient(135deg, #ff2d96 0%, #fc5c2e 100%)",
+          background: `linear-gradient(135deg, ${C.headerFrom} 0%, ${C.headerTo} 100%)`,
           color: "#ffffff",
         }}
       >
@@ -95,14 +121,14 @@ export async function renderInvoicePng(data: InvoiceData): Promise<Buffer> {
             backgroundColor: "#ffffff",
             borderRadius: 24,
             padding: 28,
-            border: "2px solid #ffe0ef",
+            border: `2px solid ${C.cardBorder}`,
           }}
         >
-          <span style={{ fontSize: 22, color: "#8258f7", fontWeight: 700 }}>Ditagihkan kepada</span>
+          <span style={{ fontSize: 22, color: C.soft, fontWeight: 700 }}>Ditagihkan kepada</span>
           <span
             style={{
               fontSize: 32,
-              color: "#7d0f46",
+              color: C.inkStrong,
               fontWeight: 700,
               marginTop: 6,
               whiteSpace: "nowrap",
@@ -113,7 +139,7 @@ export async function renderInvoicePng(data: InvoiceData): Promise<Buffer> {
           >
             {data.customerName}
           </span>
-          <span style={{ fontSize: 24, color: "#8258f7", marginTop: 4 }}>{data.customerWhatsapp}</span>
+          <span style={{ fontSize: 24, color: C.soft, marginTop: 4 }}>{data.customerWhatsapp}</span>
         </div>
 
         <div
@@ -123,13 +149,13 @@ export async function renderInvoicePng(data: InvoiceData): Promise<Buffer> {
             marginTop: 28,
             borderRadius: 24,
             overflow: "hidden",
-            border: "2px solid #ffe0ef",
+            border: `2px solid ${C.cardBorder}`,
           }}
         >
           <div
             style={{
               display: "flex",
-              backgroundColor: "#ff2d96",
+              backgroundColor: C.tableHead,
               color: "#ffffff",
               fontSize: 24,
               fontWeight: 700,
@@ -147,9 +173,9 @@ export async function renderInvoicePng(data: InvoiceData): Promise<Buffer> {
                 display: "flex",
                 fontSize: 26,
                 padding: "16px 24px",
-                backgroundColor: idx % 2 === 0 ? "#ffffff" : "#fff5fa",
-                color: "#5a2350",
-                borderTop: "1px solid #ffe0ef",
+                backgroundColor: idx % 2 === 0 ? "#ffffff" : C.rowAlt,
+                color: C.ink,
+                borderTop: `1px solid ${C.cardBorder}`,
               }}
             >
               <span style={{ flex: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -164,18 +190,38 @@ export async function renderInvoicePng(data: InvoiceData): Promise<Buffer> {
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            flexDirection: "column",
             marginTop: 24,
-            padding: "22px 28px",
+            padding: "24px 28px",
             borderRadius: 20,
-            backgroundColor: "#ffe0ef",
+            backgroundColor: C.summaryBg,
           }}
         >
-          <span style={{ fontSize: 28, fontWeight: 700, color: "#7d0f46" }}>Total Tagihan</span>
-          <span style={{ fontFamily: "Baloo 2", fontSize: 38, fontWeight: 700, color: "#c60d68" }}>
-            {formatRupiah(data.total)}
-          </span>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 26, color: C.inkStrong }}>
+            <span>Subtotal Barang</span>
+            <span style={{ fontWeight: 700 }}>{formatRupiah(data.itemsSubtotal)}</span>
+          </div>
+          {hasShipping && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: 26,
+                color: C.inkStrong,
+                marginTop: 10,
+              }}
+            >
+              <span>Ongkos Kirim</span>
+              <span style={{ fontWeight: 700 }}>{formatRupiah(data.shippingCost)}</span>
+            </div>
+          )}
+          <div style={{ display: "flex", height: 2, backgroundColor: C.line, marginTop: 16, marginBottom: 14 }} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 28, fontWeight: 700, color: C.inkStrong }}>Total Tagihan</span>
+            <span style={{ fontFamily: "Baloo 2", fontSize: 38, fontWeight: 700, color: C.accent }}>
+              {formatRupiah(data.total)}
+            </span>
+          </div>
         </div>
 
         <div
@@ -185,13 +231,13 @@ export async function renderInvoicePng(data: InvoiceData): Promise<Buffer> {
             marginTop: 24,
             padding: 24,
             borderRadius: 20,
-            backgroundColor: "#f5f2ff",
+            backgroundColor: C.softBg,
           }}
         >
-          <span style={{ fontSize: 22, fontWeight: 700, color: "#582fb8" }}>Transfer Pembayaran ke</span>
-          <span style={{ fontSize: 30, fontWeight: 700, color: "#3a2274", marginTop: 6 }}>{data.bankName}</span>
-          <span style={{ fontSize: 30, color: "#3a2274" }}>{data.accountNumber}</span>
-          <span style={{ fontSize: 24, color: "#6c3ce0" }}>a/n {data.accountHolderName}</span>
+          <span style={{ fontSize: 22, fontWeight: 700, color: C.soft }}>Transfer Pembayaran ke</span>
+          <span style={{ fontSize: 30, fontWeight: 700, color: C.softInk, marginTop: 6 }}>{data.bankName}</span>
+          <span style={{ fontSize: 30, color: C.softInk }}>{data.accountNumber}</span>
+          <span style={{ fontSize: 24, color: C.soft }}>a/n {data.accountHolderName}</span>
         </div>
 
         {data.note && (
@@ -202,11 +248,11 @@ export async function renderInvoicePng(data: InvoiceData): Promise<Buffer> {
               marginTop: 24,
               padding: 20,
               borderRadius: 20,
-              backgroundColor: "#fff4f0",
+              backgroundColor: C.noteBg,
             }}
           >
-            <span style={{ fontSize: 20, fontWeight: 700, color: "#c13615" }}>Catatan</span>
-            <span style={{ fontSize: 24, color: "#7c2716", marginTop: 4 }}>{data.note}</span>
+            <span style={{ fontSize: 20, fontWeight: 700, color: C.noteTitle }}>Catatan</span>
+            <span style={{ fontSize: 24, color: C.noteInk, marginTop: 4 }}>{data.note}</span>
           </div>
         )}
       </div>
@@ -217,20 +263,21 @@ export async function renderInvoicePng(data: InvoiceData): Promise<Buffer> {
           flexDirection: "column",
           alignItems: "center",
           padding: "28px 32px 40px 32px",
-          backgroundColor: "#fdf0f5",
+          backgroundColor: C.footerBg,
         }}
       >
-        <span style={{ fontFamily: "Baloo 2", fontSize: 28, color: "#ec1580", fontWeight: 700 }}>
-          Terima kasih sudah belanja!
+        <span style={{ fontFamily: "Baloo 2", fontSize: 30, color: C.footerTitle, fontWeight: 700 }}>
+          Terima kasih telah berbelanja.
         </span>
-        <span style={{ fontSize: 20, color: "#8258f7", marginTop: 4 }}>Sampai jumpa di pesanan berikutnya</span>
+        <span style={{ fontSize: 22, color: C.soft, marginTop: 6 }}>
+          Semoga Allah berkahi muamalah yang kita lakukan.
+        </span>
       </div>
     </div>
   );
 
   const svg = await satori(markup, {
     width: WIDTH,
-    height,
     fonts: fonts.map((f) => ({ name: f.name, data: f.data, weight: f.weight, style: "normal" as const })),
   });
 

@@ -20,7 +20,7 @@ export default function DeleteTransactionButton({ id }: { id: string }) {
           router.refresh();
         });
       }}
-      className="rounded-xl p-2 text-coral-500 hover:bg-coral-50"
+      className="rounded-xl p-2 text-rose-500 hover:bg-rose-50"
       aria-label="Hapus transaksi"
     >
       <Trash2 size={16} />

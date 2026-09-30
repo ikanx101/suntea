@@ -27,7 +27,7 @@ export default async function PesananPage({ searchParams }: { searchParams: { st
   return (
     <div className="space-y-5">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <h1 className="font-heading text-2xl font-bold text-hotpink-700">Pesanan</h1>
+        <h1 className="font-heading text-2xl font-bold text-turquoise-700">Pesanan</h1>
         <Link href="/pesanan/baru" className="btn-primary">
           <Plus size={18} /> Tambah Pesanan
         </Link>
@@ -39,7 +39,7 @@ export default async function PesananPage({ searchParams }: { searchParams: { st
             key={tab.value}
             href={tab.value === "ALL" ? "/pesanan" : `/pesanan?status=${tab.value}`}
             className={`rounded-2xl px-4 py-2 text-sm font-semibold transition ${
-              status === tab.value ? "bg-hotpink-500 text-white shadow" : "bg-lavender-50 text-lavender-600"
+              status === tab.value ? "bg-turquoise-500 text-white shadow" : "bg-ocean-50 text-ocean-600"
             }`}
           >
             {tab.label}
@@ -48,7 +48,7 @@ export default async function PesananPage({ searchParams }: { searchParams: { st
       </div>
 
       {orders.length === 0 ? (
-        <p className="card text-center text-lavender-500">Belum ada pesanan.</p>
+        <p className="card text-center text-ocean-500">Belum ada pesanan.</p>
       ) : (
         <div className="space-y-3">
           {orders.map((order) => (
@@ -58,15 +58,15 @@ export default async function PesananPage({ searchParams }: { searchParams: { st
               className="card flex flex-col gap-2 transition hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
-                <p className="font-heading font-bold text-hotpink-800">{order.customerName}</p>
-                <p className="text-xs text-lavender-500">
+                <p className="font-heading font-bold text-turquoise-800">{order.customerName}</p>
+                <p className="text-xs text-ocean-500">
                   {order.invoiceNumber} · {formatDate(order.orderDate)}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <OrderStatusBadge status={order.status} />
                 <PaymentStatusBadge status={order.paymentStatus} />
-                <span className="font-heading font-bold text-hotpink-700">{formatRupiah(order.total)}</span>
+                <span className="font-heading font-bold text-turquoise-700">{formatRupiah(order.total)}</span>
                 <DeleteOrderButton orderId={order.id} invoiceNumber={order.invoiceNumber} />
               </div>
             </Link>

@@ -24,28 +24,28 @@ export default async function LaporanPage({
   return (
     <div className="space-y-5">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <h1 className="font-heading text-2xl font-bold text-hotpink-700">Laporan</h1>
+        <h1 className="font-heading text-2xl font-bold text-turquoise-700">Laporan</h1>
         <DateRangeFilter />
       </div>
 
-      <p className="rounded-2xl bg-lavender-50 px-4 py-2 text-sm text-lavender-600">
+      <p className="rounded-2xl bg-ocean-50 px-4 py-2 text-sm text-ocean-600">
         Export CSV/Excel menyusul — menunggu konfirmasi kebutuhan (lihat bagian 12 dokumen requirement).
       </p>
 
       <div className="card">
-        <h2 className="mb-3 font-heading text-lg font-bold text-hotpink-700">
+        <h2 className="mb-3 font-heading text-lg font-bold text-turquoise-700">
           Transaksi ({transactions.length}) — Masuk {formatRupiah(totalIn)} / Keluar {formatRupiah(totalOut)}
         </h2>
         {transactions.length === 0 ? (
-          <p className="text-sm text-lavender-500">Tidak ada transaksi pada periode ini.</p>
+          <p className="text-sm text-ocean-500">Tidak ada transaksi pada periode ini.</p>
         ) : (
           <div className="space-y-2">
             {transactions.map((t) => (
-              <div key={t.id} className="flex items-center justify-between rounded-xl bg-lavender-50/60 px-3 py-2 text-sm">
+              <div key={t.id} className="flex items-center justify-between rounded-xl bg-ocean-50/60 px-3 py-2 text-sm">
                 <span>
                   {formatDate(t.date)} · {t.category}
                 </span>
-                <span className={t.type === "IN" ? "font-semibold text-mint-600" : "font-semibold text-coral-600"}>
+                <span className={t.type === "IN" ? "font-semibold text-mint-600" : "font-semibold text-rose-600"}>
                   {t.type === "IN" ? "+" : "-"}
                   {formatRupiah(t.amount)}
                 </span>
@@ -56,20 +56,20 @@ export default async function LaporanPage({
       </div>
 
       <div className="card">
-        <h2 className="mb-3 font-heading text-lg font-bold text-hotpink-700">Pesanan ({orders.length})</h2>
+        <h2 className="mb-3 font-heading text-lg font-bold text-turquoise-700">Pesanan ({orders.length})</h2>
         {orders.length === 0 ? (
-          <p className="text-sm text-lavender-500">Tidak ada pesanan pada periode ini.</p>
+          <p className="text-sm text-ocean-500">Tidak ada pesanan pada periode ini.</p>
         ) : (
           <div className="space-y-2">
             {orders.map((o) => (
-              <div key={o.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-hotpink-50/50 px-3 py-2 text-sm">
+              <div key={o.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-turquoise-50/50 px-3 py-2 text-sm">
                 <span>
                   {formatDate(o.orderDate)} · {o.customerName} · {o.invoiceNumber}
                 </span>
                 <div className="flex items-center gap-2">
                   <OrderStatusBadge status={o.status} />
                   <PaymentStatusBadge status={o.paymentStatus} />
-                  <span className="font-semibold text-hotpink-700">{formatRupiah(o.total)}</span>
+                  <span className="font-semibold text-turquoise-700">{formatRupiah(o.total)}</span>
                 </div>
               </div>
             ))}

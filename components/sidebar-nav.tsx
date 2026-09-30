@@ -9,13 +9,13 @@ export default function SidebarNav({ storeName, logoSrc }: { storeName: string; 
   const pathname = usePathname();
 
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-r border-hotpink-100 bg-white/70 p-5 lg:flex">
+    <aside className="hidden w-64 shrink-0 flex-col border-r border-turquoise-100 bg-white/70 p-5 lg:flex">
       <div className="mb-8 flex items-center gap-3 px-2">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={logoSrc} alt={storeName} className="h-10 w-10 rounded-2xl object-cover shadow-sm" />
         <div>
-          <p className="font-heading text-lg font-bold leading-tight text-hotpink-600">{storeName}</p>
-          <p className="text-xs text-lavender-500">Panel manajemen toko</p>
+          <p className="font-heading text-lg font-bold leading-tight text-turquoise-600">{storeName}</p>
+          <p className="text-xs text-ocean-500">Panel manajemen toko</p>
         </div>
       </div>
       <nav className="flex flex-1 flex-col gap-1">
@@ -29,8 +29,8 @@ export default function SidebarNav({ storeName, logoSrc }: { storeName: string; 
               className={clsx(
                 "flex items-center gap-3 rounded-2xl px-4 py-2.5 font-medium transition",
                 active
-                  ? "bg-gradient-to-r from-hotpink-500 to-coral-400 text-white shadow-md"
-                  : "text-lavender-700 hover:bg-hotpink-50",
+                  ? "bg-gradient-to-r from-turquoise-500 to-aqua-400 text-white shadow-md"
+                  : "text-ocean-700 hover:bg-turquoise-50",
               )}
             >
               <Icon size={18} />

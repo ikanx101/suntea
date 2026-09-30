@@ -42,7 +42,7 @@ export default function DeleteOrderButton({
       type="button"
       disabled={pending}
       onClick={handleClick}
-      className={label ? "btn-ghost !text-coral-600" : "rounded-xl p-2 text-coral-500 hover:bg-coral-50"}
+      className={label ? "btn-ghost !text-rose-600" : "rounded-xl p-2 text-rose-500 hover:bg-rose-50"}
       aria-label={`Hapus invoice ${invoiceNumber}`}
     >
       <Trash2 size={16} />

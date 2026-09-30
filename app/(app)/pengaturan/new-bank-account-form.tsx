@@ -28,13 +28,13 @@ export default function NewBankAccountForm() {
   }, [state, router]);
 
   return (
-    <form ref={formRef} action={formAction} className="space-y-3 rounded-2xl border-2 border-dashed border-lavender-200 p-4">
+    <form ref={formRef} action={formAction} className="space-y-3 rounded-2xl border-2 border-dashed border-ocean-200 p-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <input name="bankName" required className="input" placeholder="Nama bank (mis. BCA)" />
         <input name="accountNumber" required className="input" placeholder="Nomor rekening" />
         <input name="accountHolderName" required className="input" placeholder="Nama pemilik rekening" />
       </div>
-      {state?.error && <p className="text-sm font-medium text-coral-600">{state.error}</p>}
+      {state?.error && <p className="text-sm font-medium text-rose-600">{state.error}</p>}
       <SubmitButton />
     </form>
   );

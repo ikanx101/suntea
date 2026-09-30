@@ -64,7 +64,7 @@ Ditambahkan:
 - **Autentikasi**: login (Credentials, single admin), logout, ganti password, sesi bertahan 30 hari, tanpa halaman registrasi publik.
 - **Produk**: CRUD + arsip barang, field nama pemasok (internal, tidak tampil di invoice), kategori, harga beli/jual, pencarian & filter kategori.
 - **Pesanan**: CRUD pesanan multi-item dengan snapshot harga & nama barang, status pesanan (Baru/Diproses/Selesai/Dibatalkan) terpisah dari status pembayaran.
-- **Invoice PNG**: generate invoice bertema girly (lebar tetap 1080px, tinggi menyesuaikan), pilih rekening bank tujuan, tabel item hanya nama barang/qty/total, tombol download & share (Web Share API).
+- **Invoice PNG**: generate invoice bertema girly (lebar tetap 1080px, tinggi menyesuaikan), pilih rekening bank tujuan, tabel item hanya nama barang/qty/total, tombol download & share (Web Share API). *(Sejak v1.1.0 tema diganti turquoise & invoice mendukung baris ongkir — lihat Changelog `[1.1.0]`.)*
 - **Rekening Bank**: CRUD rekening bank (bisa lebih dari satu), snapshot ke pesanan saat invoice dibuat.
 - **Keuangan**: buku kas — transaksi manual & otomatis dari konfirmasi pembayaran, transaksi hasil pesanan bersifat read-only.
 - **Piutang**: halaman konfirmasi pembayaran — checklist Lunas/Belum Lunas per invoice, filter & pencarian, ringkasan total piutang.
@@ -89,7 +89,7 @@ Sengaja belum termasuk (menunggu konfirmasi Santi — lihat bagian 12 `requireme
 | Layer | Pilihan |
 |---|---|
 | Framework | Next.js 14 (App Router) + TypeScript |
-| Styling | Tailwind CSS (tema custom "Girly & Active") |
+| Styling | Tailwind CSS (tema custom "Turquoise") |
 | Database | PostgreSQL |
 | ORM | Prisma 5 |
 | Autentikasi | next-auth v4 (Credentials Provider, JWT session) + bcryptjs |
@@ -193,6 +193,19 @@ Verifikasi dilakukan dua tahap, semuanya di lingkungan lokal dengan Postgres via
 - Root cause redirect loop dikonfirmasi lewat `curl` langsung ke domain production (login → ambil cookie sesi asli → akses `/` → sebelum fix: 50+ redirect berulang; sesudah fix & redeploy: `200` langsung tanpa redirect).
 - QA browser sungguhan diulang **langsung di domain production** (bukan lokal): login (kredensial benar & salah), reload halaman berkali-kali (pastikan sesi tidak sempat loop lagi), logout lalu login ulang, tambah produk/rekening bank/pesanan uji, generate & unduh invoice PNG (diverifikasi valid), toggle Lunas/Belum Lunas (transaksi otomatis tercatat & terhapus dengan benar), tambah transaksi manual, cek Laporan & Dashboard, cek tampilan mobile (390px) — semua normal, tidak ada regresi dari fix cookie.
 - Seluruh data uji yang dibuat di production **sudah dibersihkan lewat UI** (pesanan uji dibatalkan, produk uji diarsipkan, rekening bank uji dinonaktifkan, transaksi otomatis ikut terhapus) — aplikasi ini tidak punya fitur hapus permanen by design (lihat bagian 4.2–4.7 `requirement_final.md`, arsip bukan hapus, demi integritas histori), dan proses QA ini sengaja tidak mengakses `DATABASE_URL` production secara langsung.
+
+**Tahap 4 — QA revisi v1.1.0 (tema turquoise + ongkir), 30 Sep 2026:**
+
+- `tsc --noEmit` tanpa galat, `next lint` bersih, `next build` sukses, dan `prisma migrate status` melaporkan skema sudah up to date (migrasi `20260930190000_add_shipping_cost` terpasang).
+- QA browser (Playwright, login → halaman pesanan) dijalankan lewat production build:
+  - Pertanyaan **"Ada ongkir pada transaksi ini?"** tampil di panel Invoice dengan dua tombol **Tidak ada** / **Ada ongkir**.
+  - Mode "Tidak ada" → kolom ongkir hilang, total tagihan tetap subtotal saja.
+  - Mode "Ada ongkir" (diisi Rp 30.000) → total tagihan naik dari Rp 90.000 menjadi Rp 120.000, dan nilai ongkir tersimpan ke database (`Order.shippingCost` = 30000, `Order.total` = 120000).
+  - Invoice PNG digenerate untuk pesanan **dengan** ongkir dan **tanpa** ongkir → keduanya `200` tanpa error konsol; tinggi menyesuaikan (1484 px vs 1243 px), dan baris "Ongkos Kirim" hanya muncul pada invoice yang memang berongkir. Isi invoice diperiksa ulang dengan OCR.
+- Verifikasi warna: analisis piksel PNG invoice menunjukkan 99.832 piksel turquoise dengan sisa 8 piksel merah (anti-aliasing saja); tangkapan layar halaman utama aplikasi (dashboard, daftar pesanan, keuangan, laporan, pengaturan) berwarna turquoise 99–99,7%.
+- Seluruh data uji dibersihkan setelah QA, server pratinjau dimatikan, dan database dikembalikan bersih (hanya akun admin dari seed).
+
+Setelah revisi v1.1.0, `requirement_final.md` ikut diperbarui: bagian 4.3 & 7 (ongkir + penutup invoice), bagian 6 & 8 (tema turquoise), bagian 9 (kolom `Order.shipping_cost`), serta tambahan bagian 15 (Riwayat Revisi Dokumen).
 
 Karena tahap 2 & 3 sudah mencakup klik langsung di browser sungguhan (termasuk langsung di production), Santi tidak wajib mengulang uji coba ini dari awal — cukup familiarisasi normal saat pertama pakai, dan disarankan mengganti password admin dari halaman Pengaturan kalau belum.
 

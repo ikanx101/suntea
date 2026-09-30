@@ -48,7 +48,9 @@ CRUD untuk pesanan dengan field:
 - Status pesanan: **Baru → Diproses → Selesai / Dibatalkan**
 - Status pembayaran: **Belum Lunas / Lunas** (independen dari status pesanan — lihat bagian 4.8; default **Belum Lunas** saat pesanan dibuat)
 - Catatan tambahan (opsional, contoh: alamat, metode pembayaran, permintaan khusus)
-- Total otomatis dihitung dari (harga jual × qty) semua item
+- Total otomatis dihitung dari (harga jual × qty) semua item, **ditambah ongkos kirim bila ada** (lihat di bawah)
+
+**Ongkos kirim** *(revisi 30 Sep 2026)*: Saat generate invoice, sistem menanyakan lebih dulu kepada Santi apakah transaksi tersebut dikenakan ongkir — dengan dua pilihan **Tidak ada** / **Ada ongkir**. Bila "Ada ongkir" dipilih, Santi mengisi nominalnya (Rupiah) dan nilai itu **langsung menambah total tagihan** (contoh: subtotal Rp 90.000 + ongkir Rp 30.000 = total Rp 120.000), lalu tersimpan sebagai `Order.shippingCost` (default `0` agar pesanan lama aman). Bila tidak ada ongkir, baris "Ongkos Kirim" **tidak ditampilkan sama sekali** di halaman detail pesanan, panel invoice, maupun invoice PNG — dan tinggi invoice PNG otomatis menyesuaikan.
 
 Dipisahkannya status pesanan (proses pemenuhan barang) dari status pembayaran (uang sudah masuk atau belum) karena di lapangan kadang barang sudah dikirim/pesanan selesai diproses namun pelanggan belum transfer (piutang) — lihat bagian 4.8 untuk cara Santi mengonfirmasi pembayaran.
 
@@ -112,9 +114,11 @@ Fitur ini memungkinkan Santi mengecek satu per satu invoice mana yang uangnya su
 - **Bahasa:** Seluruh antarmuka menggunakan Bahasa Indonesia, format mata uang Rupiah (Rp).
 - **Ketersediaan data:** Data tersimpan permanen di database (bukan disimpan di browser), bisa diakses dari device manapun setelah login.
 
-## 6. Desain UI/UX — Tema "Girly & Active"
+## 6. Desain UI/UX — Tema "Turquoise"
 
-- **Palet warna:** Dominan pink cerah/hot pink, ungu lavender, dan coral/peach sebagai aksen, dipadukan dengan putih/krem sebagai latar agar tetap nyaman dibaca. Warna hijau mint atau kuning lembut untuk status "sukses"/highlight agar terasa ceria.
+*(Tema ini menggantikan tema awal "Girly & Active" sejak revisi 30 Sep 2026 — lihat bagian 15.)*
+
+- **Palet warna:** Dominan **turquoise** (tosca/teal), dengan **aqua**, **ocean** (biru laut), dan **mint** sebagai aksen/penyeimbang, dipadukan latar putih / `#f2fbfa` dan teks utama `#115e5c` agar tetap nyaman dibaca dan tidak menyilaukan. Warna merah (`rose-*`) **sengaja dipertahankan** untuk makna fungsional, bukan bagian dari tema: tombol hapus, pesan galat, dan penanda status "Belum Lunas".
 - **Tipografi:** Font heading yang playful & rounded (contoh: Baloo 2 / Poppins / Fredoka), font body yang tetap mudah dibaca (contoh: Inter/Nunito).
 - **Elemen visual:** Sudut membulat (rounded-2xl), gradient lembut pada tombol/kartu, ikon-ikon bulat/emoji-friendly, sedikit animasi/microinteraction (hover bounce, fade/slide transition) agar terasa "active"/dinamis tanpa mengganggu fungsi.
 - **Layout:** Bottom navigation bar ala aplikasi mobile untuk akses cepat ke Dashboard/Produk/Pesanan/Keuangan saat dibuka dari HP; sidebar saat dibuka dari layar lebar.
@@ -128,10 +132,12 @@ Fitur ini memungkinkan Santi mengecek satu per satu invoice mana yang uangnya su
 - Tanggal & jam transaksi
 - Nama pemesan & nomor WhatsApp
 - Tabel item: **hanya nama barang, qty, dan total nilai (total value) per baris** — harga satuan, nama pemasok, dan data internal barang lainnya **tidak ditampilkan** di invoice
-- Total keseluruhan
+- Subtotal nilai barang
+- **Ongkos Kirim** — baris ini **hanya muncul bila nilainya lebih dari 0** (lihat bagian 4.3)
+- Total keseluruhan (subtotal + ongkir)
 - Informasi rekening bank tujuan pembayaran (nama bank, nomor rekening, nama pemilik rekening) — dipilih Santi dari daftar rekening yang tersimpan (lihat bagian 4.7)
 - Catatan (jika diisi)
-- Footer ucapan terima kasih + sentuhan tema girly (warna/aksen sesuai bagian 6)
+- Footer ucapan terima kasih: *"Terima kasih telah berbelanja. Semoga Allah berkahi muamalah yang kita lakukan."* — dengan warna/aksen tema turquoise (sesuai bagian 6)
 
 **Ukuran & kompatibilitas layar:**
 Perangkat yang disebutkan punya resolusi berbeda:
@@ -152,7 +158,7 @@ Karena rencana deploy ke **Railway.app**, berikut stack yang diusulkan (dioptima
 | Layer | Pilihan | Alasan |
 |---|---|---|
 | Framework | **Next.js 14+ (App Router) + TypeScript** | Full-stack (frontend + API) dalam satu project, deploy mudah ke Railway sebagai satu service |
-| Styling | **Tailwind CSS** + komponen custom (shadcn/ui sebagai basis) | Cepat untuk membangun tema girly yang konsisten & responsif |
+| Styling | **Tailwind CSS** + komponen custom (shadcn/ui sebagai basis) | Cepat untuk membangun tema turquoise yang konsisten & responsif |
 | Database | **PostgreSQL** (Railway Postgres plugin) | Managed, tinggal attach di Railway, gratis di tier awal |
 | ORM | **Prisma** | Migrasi skema rapi, type-safe query |
 | Autentikasi | **Auth.js (NextAuth) — Credentials Provider**, single admin user | Sederhana untuk 1 pengguna, session via cookie (JWT) |
@@ -171,7 +177,7 @@ Struktur env variable utama: `DATABASE_URL`, `AUTH_SECRET`, `ADMIN_EMAIL`/`ADMIN
 - id, name, description, category, supplier_name, buy_price, sell_price, is_active, created_at, updated_at
 
 **Order**
-- id, invoice_number, customer_name, customer_whatsapp, status (`new`/`processing`/`done`/`cancelled`), payment_status (`unpaid`/`paid`, default `unpaid` — lihat bagian 4.8), paid_at (nullable), note, order_date, total, bank_account_id (nullable, rekening yang dipilih saat generate invoice), bank_name_snapshot, account_number_snapshot, account_holder_name_snapshot, created_at, updated_at
+- id, invoice_number, customer_name, customer_whatsapp, status (`new`/`processing`/`done`/`cancelled`), payment_status (`unpaid`/`paid`, default `unpaid` — lihat bagian 4.8), paid_at (nullable), note, order_date, shipping_cost (integer, default 0 — ongkir, lihat bagian 4.3), total (subtotal item + ongkir), bank_account_id (nullable, rekening yang dipilih saat generate invoice), bank_name_snapshot, account_number_snapshot, account_holder_name_snapshot, created_at, updated_at
 
 **OrderItem**
 - id, order_id, product_id, product_name_snapshot, unit_price_snapshot, qty, subtotal
@@ -236,6 +242,14 @@ Jika tidak ada catatan khusus, development akan mengikuti asumsi default yang te
 - Tidak ada integrasi otomatis dengan WhatsApp API (pengiriman invoice tetap manual oleh Santi via share/download) — sesuai kebutuhan awal yang hanya minta *generate* invoice, bukan *auto-send*.
 - Tidak ada fitur pembayaran online (payment gateway) di versi awal.
 - Fokus MVP: Produk (termasuk data pemasok), Pesanan + Invoice, Rekening Bank, Keuangan/Kas, Konfirmasi Pembayaran/Piutang, Dashboard ringkas, Login. Fitur lain (export, foto produk, stok) menyusul sesuai jawaban di bagian 12.
+
+## 15. Riwayat Revisi Dokumen
+
+- **30 Sep 2026 — Revisi tema, ongkir, dan penutup invoice (aplikasi v1.1.0).** Tiga perubahan atas permintaan Santi:
+  1. **Tema warna berubah** dari "Girly & Active" (pink/lavender/coral/krem) menjadi **Turquoise** (turquoise/aqua/ocean/mint) — berlaku untuk UI aplikasi maupun invoice PNG. Lihat bagian 6 & 7.
+  2. **Ongkos kirim ditambahkan pada invoice & pesanan.** Saat generate invoice, sistem mengonfirmasi lebih dulu ada/tidaknya ongkir; bila ada, nominalnya menambah total tagihan dan tersimpan di kolom baru `Order.shipping_cost`. Lihat bagian 4.3, 7, dan 9.
+  3. **Teks penutup invoice diganti** menjadi: *"Terima kasih telah berbelanja. Semoga Allah berkahi muamalah yang kita lakukan."* Lihat bagian 7.
+  - Rincian teknis & hasil verifikasi revisi ini ada di `README.md` (Changelog `[1.1.0]` dan bagian Hasil Verifikasi).
 
 ---
 

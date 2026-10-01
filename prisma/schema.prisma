@@ -81,7 +81,11 @@ model OrderItem {
   productNameSnapshot String
   unitPriceSnapshot  Int
   qty                Int
+  /// Harga kotor baris ini: unitPriceSnapshot x qty (SEBELUM diskon).
   subtotal           Int
+  /// Nominal diskon untuk baris ini (Rupiah). 0 = tanpa diskon.
+  /// Harga bersih baris = subtotal - discount.
+  discount           Int    @default(0)
 
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)

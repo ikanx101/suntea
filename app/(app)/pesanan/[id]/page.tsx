@@ -16,6 +16,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
   if (!order) notFound();
 
   const itemsSubtotal = order.items.reduce((sum, item) => sum + item.subtotal, 0);
+  const itemsDiscount = order.items.reduce((sum, item) => sum + item.discount, 0);
 
   const bankAccounts = await prisma.bankAccount.findMany({
     where: { isActive: true },
@@ -58,8 +59,13 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                 <p className="text-ocean-500">
                   {item.qty} x {formatRupiah(item.unitPriceSnapshot)}
                 </p>
+                {item.discount > 0 && (
+                  <p className="text-ocean-500">
+                    Diskon <span className="font-semibold text-turquoise-600">−{formatRupiah(item.discount)}</span>
+                  </p>
+                )}
               </div>
-              <p className="font-semibold text-turquoise-700">{formatRupiah(item.subtotal)}</p>
+              <p className="font-semibold text-turquoise-700">{formatRupiah(item.subtotal - item.discount)}</p>
             </div>
           ))}
         </div>
@@ -68,6 +74,12 @@ export default async function OrderDetailPage({ params }: { params: { id: string
             <span className="text-ocean-600">Subtotal barang</span>
             <span className="font-semibold text-turquoise-800">{formatRupiah(itemsSubtotal)}</span>
           </div>
+          {itemsDiscount > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-ocean-600">Diskon</span>
+              <span className="font-semibold text-turquoise-800">−{formatRupiah(itemsDiscount)}</span>
+            </div>
+          )}
           <div className="flex items-center justify-between text-sm">
             <span className="text-ocean-600">Ongkos kirim</span>
             <span className="font-semibold text-turquoise-800">
@@ -91,6 +103,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
           orderId={order.id}
           invoiceNumber={order.invoiceNumber}
           itemsSubtotal={itemsSubtotal}
+          itemsDiscount={itemsDiscount}
           shippingCost={order.shippingCost}
           bankAccounts={bankAccounts}
           currentBankAccountId={order.bankAccountId}

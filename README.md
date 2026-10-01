@@ -4,11 +4,27 @@ Webapp privat untuk mencatat produk, pesanan, invoice, keuangan (kas masuk/kelua
 
 ## Versi
 
-**v1.1.0** — tema warna aplikasi & invoice diganti turquoise, plus dukungan ongkos kirim pada invoice/pesanan.
+**v1.2.0** — diskon per item saat membuat pesanan; total tagihan = harga bersih tiap item (setelah diskon) + ongkir.
 
 ### Changelog
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/).
+
+#### [1.2.0] - 2026-10-01
+
+Ditambahkan:
+
+- **Diskon per item saat membuat pesanan** — di form Pesanan Baru, setiap baris barang kini punya kolom **Diskon (Rp)** (opsional). Santi bisa mengisi besaran diskon untuk item yang memang didiskon; kolom ini boleh dikosongkan untuk item tanpa diskon.
+  - **Total tagihan dihitung dari harga bersih**: `total = Σ (harga barang × qty − diskon) + ongkir`. Contoh: Teh Melati 3 × Rp 10.000 = Rp 30.000, diskon Rp 5.000 → baris jadi Rp 25.000; ditambah Dimsum Rp 50.000 → subtotal Rp 80.000, diskon Rp 5.000, total barang bersih Rp 75.000; bila ada ongkir Rp 20.000 → **Total Tagihan Rp 95.000**.
+  - Diskon **dibatasi tidak boleh melebihi harga barang pada baris itu** — bila Santi salah mengisi (mis. diskon lebih besar dari harga barang), form menolak dengan pesan yang menyebut nama barangnya.
+  - **Halaman detail pesanan**, **panel invoice**, dan **invoice PNG** menampilkan rinciannya: baris "Diskon −Rp …" muncul **hanya bila ada diskon** (ditilik per baris pada tabel item, dan sebagai baris ringkasan "Diskon" jika total diskon > 0). Bila tidak ada diskon sama sekali, tidak ada baris diskon yang tampil dan tinggi invoice PNG otomatis menyesuaikan.
+  - Skema database bertambah kolom `OrderItem.discount` (default `0`) lewat migrasi `20261001080000_add_order_item_discount`. Aman untuk data lama: item pesanan yang sudah ada otomatis bernilai 0 (dianggap tanpa diskon).
+  - **Estimasi margin di Dashboard** ikut menghitung diskon, supaya laba tidak dilebih-lebihkan.
+
+Diverifikasi dengan:
+
+- `tsc --noEmit` tanpa galat, `next lint` bersih, `next build` sukses, dan `prisma migrate status` melaporkan skema sudah up to date.
+- QA browser (Playwright, login → form Pesanan Baru → halaman detail → generate invoice) pada production build: kolom diskon tersimpan, ringkasan form & halaman detail menampilkan "Diskon −Rp 5.000" dan "Total Rp 75.000", lalu setelah ongkir Rp 20.000 diisi di panel invoice, "Total tagihan" menjadi **Rp 95.000**, dan invoice PNG berhasil digenerate (200, tanpa error konsol). Isi invoice diperiksa ulang dengan OCR: tabel item menampilkan harga bersih per baris (Rp 25.000 dan Rp 50.000) beserta sub-baris "Diskon −Rp 5.000", ringkasan menampilkan Subtotal Barang Rp 80.000 · Diskon −Rp 5.000 · Ongkos Kirim Rp 20.000 · **Total Tagihan Rp 95.000**. Pemeriksaan piksel memastikan seluruh isi berada dalam kanvas (konten maks. x=1021 dari lebar 1080).
 
 #### [1.1.0] - 2026-09-30
 

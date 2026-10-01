@@ -27,7 +27,10 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const settings = await prisma.settings.findUnique({ where: { id: "settings" } });
 
   const itemsSubtotal = order.items.reduce((sum, item) => sum + item.subtotal, 0);
+  const itemsDiscount = order.items.reduce((sum, item) => sum + item.discount, 0);
   const shippingCost = order.shippingCost;
+  // Total tagihan = harga bersih barang (setelah diskon) + ongkir.
+  const total = itemsSubtotal - itemsDiscount + shippingCost;
 
   const png = await renderInvoicePng({
     storeName: settings?.storeName ?? "Toko Santi Irawati",
@@ -39,11 +42,15 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     items: order.items.map((item) => ({
       name: item.productNameSnapshot,
       qty: item.qty,
-      total: item.subtotal,
+      unitPrice: item.unitPriceSnapshot,
+      gross: item.subtotal,
+      discount: item.discount,
+      net: item.subtotal - item.discount,
     })),
     itemsSubtotal,
+    itemsDiscount,
     shippingCost,
-    total: itemsSubtotal + shippingCost,
+    total,
     bankName: order.bankNameSnapshot,
     accountNumber: order.accountNumberSnapshot,
     accountHolderName: order.accountHolderSnapshot,

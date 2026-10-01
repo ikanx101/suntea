@@ -13,6 +13,7 @@ export default function InvoicePanel({
   orderId,
   invoiceNumber,
   itemsSubtotal,
+  itemsDiscount,
   shippingCost,
   bankAccounts,
   currentBankAccountId,
@@ -20,6 +21,7 @@ export default function InvoicePanel({
   orderId: string;
   invoiceNumber: string;
   itemsSubtotal: number;
+  itemsDiscount: number;
   shippingCost: number;
   bankAccounts: BankAccount[];
   currentBankAccountId: string | null;
@@ -34,7 +36,8 @@ export default function InvoicePanel({
   const [sharing, setSharing] = useState(false);
 
   const shippingValue = hasShipping ? Math.max(0, Math.trunc(Number(shippingInput) || 0)) : 0;
-  const grandTotal = itemsSubtotal + shippingValue;
+  // Total tagihan = harga bersih barang (setelah diskon) + ongkir.
+  const grandTotal = itemsSubtotal - itemsDiscount + shippingValue;
   const dirty = selected !== currentBankAccountId || shippingValue !== shippingCost;
 
   const generateLabel = pending
@@ -166,6 +169,12 @@ export default function InvoicePanel({
             <dt className="text-ocean-600">Subtotal barang</dt>
             <dd className="font-semibold text-turquoise-800">{formatRupiah(itemsSubtotal)}</dd>
           </div>
+          {itemsDiscount > 0 && (
+            <div className="flex items-center justify-between">
+              <dt className="text-ocean-600">Diskon</dt>
+              <dd className="font-semibold text-turquoise-800">−{formatRupiah(itemsDiscount)}</dd>
+            </div>
+          )}
           {shippingValue > 0 && (
             <div className="flex items-center justify-between">
               <dt className="text-ocean-600">Ongkos kirim</dt>

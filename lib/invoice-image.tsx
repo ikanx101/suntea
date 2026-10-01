@@ -18,6 +18,19 @@ function loadFonts() {
   return fontsCache;
 }
 
+export type InvoiceItem = {
+  name: string;
+  qty: number;
+  /** Harga satuan (snapshot) sebelum diskon. */
+  unitPrice: number;
+  /** Harga kotor baris ini: unitPrice × qty. */
+  gross: number;
+  /** Nominal diskon baris ini (Rupiah); 0 berarti tanpa diskon. */
+  discount: number;
+  /** Harga bersih baris ini: gross - discount. */
+  net: number;
+};
+
 export type InvoiceData = {
   storeName: string;
   logoDataUrl: string | null;
@@ -25,12 +38,14 @@ export type InvoiceData = {
   orderDate: Date;
   customerName: string;
   customerWhatsapp: string;
-  items: { name: string; qty: number; total: number }[];
-  /** Jumlah harga barang sebelum ongkir. */
+  items: InvoiceItem[];
+  /** Jumlah harga barang sebelum diskon. */
   itemsSubtotal: number;
+  /** Total diskon seluruh barang; 0 berarti tidak ada diskon. */
+  itemsDiscount: number;
   /** Nilai ongkir; 0 berarti tidak ada ongkir. */
   shippingCost: number;
-  /** Total tagihan = itemsSubtotal + shippingCost. */
+  /** Total tagihan = (itemsSubtotal − itemsDiscount) + shippingCost. */
   total: number;
   bankName: string;
   accountNumber: string;
@@ -67,6 +82,7 @@ export async function renderInvoicePng(data: InvoiceData): Promise<Buffer> {
   const fonts = loadFonts();
 
   const hasShipping = data.shippingCost > 0;
+  const hasDiscount = data.itemsDiscount > 0;
 
   // Tinggi kanvas TIDAK dipatok: satori menghitung sendiri sesuai isi
   // (jumlah barang, ada/tidaknya baris ongkir, dan panjang catatan).
@@ -178,11 +194,25 @@ export async function renderInvoicePng(data: InvoiceData): Promise<Buffer> {
                 borderTop: `1px solid ${C.cardBorder}`,
               }}
             >
-              <span style={{ flex: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {item.name}
-              </span>
+              <div
+                style={{
+                  flex: 3,
+                  display: "flex",
+                  flexDirection: "column",
+                  paddingRight: 16,
+                }}
+              >
+                <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {item.name}
+                </span>
+                {item.discount > 0 && (
+                  <span style={{ fontSize: 20, fontWeight: 700, color: C.accent, marginTop: 4 }}>
+                    Diskon −{formatRupiah(item.discount)}
+                  </span>
+                )}
+              </div>
               <span style={{ flex: 1, textAlign: "center" }}>{item.qty}</span>
-              <span style={{ flex: 2, textAlign: "right", fontWeight: 700 }}>{formatRupiah(item.total)}</span>
+              <span style={{ flex: 2, textAlign: "right", fontWeight: 700 }}>{formatRupiah(item.net)}</span>
             </div>
           ))}
         </div>
@@ -201,6 +231,20 @@ export async function renderInvoicePng(data: InvoiceData): Promise<Buffer> {
             <span>Subtotal Barang</span>
             <span style={{ fontWeight: 700 }}>{formatRupiah(data.itemsSubtotal)}</span>
           </div>
+          {hasDiscount && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: 26,
+                color: C.inkStrong,
+                marginTop: 10,
+              }}
+            >
+              <span>Diskon</span>
+              <span style={{ fontWeight: 700 }}>−{formatRupiah(data.itemsDiscount)}</span>
+            </div>
+          )}
           {hasShipping && (
             <div
               style={{

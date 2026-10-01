@@ -10,6 +10,15 @@ import { generateInvoiceNumber } from "@/lib/invoice-number";
 const orderItemSchema = z.object({
   productId: z.string().min(1),
   qty: z.number().int().positive(),
+  // Nominal diskon per baris (Rupiah). Opsional — pesanan lama/klien lama tanpa
+  // field ini otomatis dianggap 0 (tanpa diskon).
+  discount: z
+    .number({ error: "Diskon harus berupa angka" })
+    .int("Diskon harus bilangan bulat")
+    .min(0, "Diskon tidak boleh negatif")
+    .max(1_000_000_000, "Diskon terlalu besar")
+    .optional()
+    .default(0),
 });
 
 const createOrderSchema = z.object({
@@ -38,6 +47,16 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderActionS
 
   const orderDate = new Date(parsed.data.orderDate);
 
+  // Diskon tidak boleh melebihi harga barang pada baris itu.
+  for (const item of parsed.data.items) {
+    const product = products.find((p) => p.id === item.productId)!;
+    if (item.discount > product.sellPrice * item.qty) {
+      return {
+        error: `Diskon untuk ${product.name} (${item.discount}) melebihi harga barang (${product.sellPrice * item.qty})`,
+      };
+    }
+  }
+
   const itemsData = parsed.data.items.map((item) => {
     const product = products.find((p) => p.id === item.productId)!;
     const subtotal = product.sellPrice * item.qty;
@@ -47,10 +66,13 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderActionS
       unitPriceSnapshot: product.sellPrice,
       qty: item.qty,
       subtotal,
+      discount: item.discount,
     };
   });
 
-  const total = itemsData.reduce((sum, i) => sum + i.subtotal, 0);
+  // Total tagihan = harga bersih (kotor - diskon) seluruh baris.
+  // Ongkos kirim (bila ada) ditambahkan menyusul saat generate invoice.
+  const total = itemsData.reduce((sum, i) => sum + (i.subtotal - i.discount), 0);
   const invoiceNumber = await generateInvoiceNumber(orderDate);
 
   const order = await prisma.order.create({
@@ -135,7 +157,9 @@ export async function saveInvoiceSettings(
   if (!order) return { error: "Pesanan tidak ditemukan" };
 
   const itemsSubtotal = order.items.reduce((sum, item) => sum + item.subtotal, 0);
-  const total = itemsSubtotal + parsed.data.shippingCost;
+  const itemsDiscount = order.items.reduce((sum, item) => sum + item.discount, 0);
+  // Total tagihan = harga bersih barang (setelah diskon) + ongkir.
+  const total = itemsSubtotal - itemsDiscount + parsed.data.shippingCost;
 
   await prisma.$transaction(async (tx) => {
     await tx.order.update({

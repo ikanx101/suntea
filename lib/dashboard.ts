@@ -48,7 +48,8 @@ export async function getDashboardData(range: DateRange) {
       sum +
       order.items.reduce((s, item) => {
         const buyPrice = item.product?.buyPrice ?? 0;
-        return s + (item.unitPriceSnapshot - buyPrice) * item.qty;
+        // Diskon mengurangi pendapatan, jadi margin kotor memakai harga bersih.
+        return s + (item.unitPriceSnapshot - buyPrice) * item.qty - item.discount;
       }, 0)
     );
   }, 0);

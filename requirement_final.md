@@ -48,9 +48,14 @@ CRUD untuk pesanan dengan field:
 - Status pesanan: **Baru → Diproses → Selesai / Dibatalkan**
 - Status pembayaran: **Belum Lunas / Lunas** (independen dari status pesanan — lihat bagian 4.8; default **Belum Lunas** saat pesanan dibuat)
 - Catatan tambahan (opsional, contoh: alamat, metode pembayaran, permintaan khusus)
-- Total otomatis dihitung dari (harga jual × qty) semua item, **ditambah ongkos kirim bila ada** (lihat di bawah)
+- **Diskon per item (opsional)** — setiap baris barang bisa diberi besaran diskon (Rupiah) bila memang ada potongan harga (lihat di bawah)
+- Total otomatis dihitung dari **harga bersih tiap item** (harga jual × qty − diskon), **ditambah ongkos kirim bila ada** (lihat di bawah)
 
-**Ongkos kirim** *(revisi 30 Sep 2026)*: Saat generate invoice, sistem menanyakan lebih dulu kepada Santi apakah transaksi tersebut dikenakan ongkir — dengan dua pilihan **Tidak ada** / **Ada ongkir**. Bila "Ada ongkir" dipilih, Santi mengisi nominalnya (Rupiah) dan nilai itu **langsung menambah total tagihan** (contoh: subtotal Rp 90.000 + ongkir Rp 30.000 = total Rp 120.000), lalu tersimpan sebagai `Order.shippingCost` (default `0` agar pesanan lama aman). Bila tidak ada ongkir, baris "Ongkos Kirim" **tidak ditampilkan sama sekali** di halaman detail pesanan, panel invoice, maupun invoice PNG — dan tinggi invoice PNG otomatis menyesuaikan.
+**Diskon per item** *(revisi 1 Okt 2026)*: Pada form Pesanan Baru, setiap baris barang punya kolom **Diskon (Rp)** yang boleh dikosongkan (dianggap 0 / tanpa diskon). Nilai diskon tersimpan per baris sebagai `OrderItem.discount` (default `0` agar pesanan lama aman) dan **tidak boleh melebihi harga barang pada baris itu** — bila Santi salah mengisi, form menolak dengan pesan yang menyebut nama barangnya. Harga bersih baris = `(harga jual × qty) − diskon`. Total tagihan = jumlah harga bersih seluruh baris + ongkir.
+
+**Ongkos kirim** *(revisi 30 Sep 2026)*: Saat generate invoice, sistem menanyakan lebih dulu kepada Santi apakah transaksi tersebut dikenakan ongkir — dengan dua pilihan **Tidak ada** / **Ada ongkir**. Bila "Ada ongkir" dipilih, Santi mengisi nominalnya (Rupiah) dan nilai itu **langsung menambah total tagihan** (contoh: subtotal barang bersih Rp 75.000 + ongkir Rp 20.000 = total tagihan Rp 95.000), lalu tersimpan sebagai `Order.shippingCost` (default `0` agar pesanan lama aman). Bila tidak ada ongkir, baris "Ongkos Kirim" **tidak ditampilkan sama sekali** di halaman detail pesanan, panel invoice, maupun invoice PNG — dan tinggi invoice PNG otomatis menyesuaikan.
+
+> **Contoh perhitungan lengkap (diskon + ongkir):** Teh Melati 3 × Rp 10.000 = Rp 30.000 (diskon Rp 5.000 → bersih **Rp 25.000**) + Dimsum Ayam 2 × Rp 25.000 = Rp 50.000 (tanpa diskon → **Rp 50.000**). Subtotal barang Rp 80.000 − diskon Rp 5.000 = **Rp 75.000**; ditambah ongkir Rp 20.000 → **Total Tagihan Rp 95.000**.
 
 Dipisahkannya status pesanan (proses pemenuhan barang) dari status pembayaran (uang sudah masuk atau belum) karena di lapangan kadang barang sudah dikirim/pesanan selesai diproses namun pelanggan belum transfer (piutang) — lihat bagian 4.8 untuk cara Santi mengonfirmasi pembayaran.
 
@@ -131,10 +136,11 @@ Fitur ini memungkinkan Santi mengecek satu per satu invoice mana yang uangnya su
 - Nomor invoice otomatis, format `INV-YYYYMMDD-XXXX`
 - Tanggal & jam transaksi
 - Nama pemesan & nomor WhatsApp
-- Tabel item: **hanya nama barang, qty, dan total nilai (total value) per baris** — harga satuan, nama pemasok, dan data internal barang lainnya **tidak ditampilkan** di invoice
-- Subtotal nilai barang
+- Tabel item: **nama barang, qty, dan harga bersih per baris** (harga jual × qty − diskon). Harga satuan, nama pemasok, dan data internal barang lainnya **tidak ditampilkan** di invoice. Bila baris tersebut berdiskon, di bawah nama barang muncul keterangan kecil **"Diskon −Rp …"**.
+- Subtotal nilai barang (harga kotor, sebelum diskon)
+- **Diskon** — baris ini **hanya muncul bila total diskon lebih dari 0** (lihat bagian 4.3)
 - **Ongkos Kirim** — baris ini **hanya muncul bila nilainya lebih dari 0** (lihat bagian 4.3)
-- Total keseluruhan (subtotal + ongkir)
+- Total keseluruhan (**subtotal − diskon + ongkir**)
 - Informasi rekening bank tujuan pembayaran (nama bank, nomor rekening, nama pemilik rekening) — dipilih Santi dari daftar rekening yang tersimpan (lihat bagian 4.7)
 - Catatan (jika diisi)
 - Footer ucapan terima kasih: *"Terima kasih telah berbelanja. Semoga Allah berkahi muamalah yang kita lakukan."* — dengan warna/aksen tema turquoise (sesuai bagian 6)
@@ -177,10 +183,10 @@ Struktur env variable utama: `DATABASE_URL`, `AUTH_SECRET`, `ADMIN_EMAIL`/`ADMIN
 - id, name, description, category, supplier_name, buy_price, sell_price, is_active, created_at, updated_at
 
 **Order**
-- id, invoice_number, customer_name, customer_whatsapp, status (`new`/`processing`/`done`/`cancelled`), payment_status (`unpaid`/`paid`, default `unpaid` — lihat bagian 4.8), paid_at (nullable), note, order_date, shipping_cost (integer, default 0 — ongkir, lihat bagian 4.3), total (subtotal item + ongkir), bank_account_id (nullable, rekening yang dipilih saat generate invoice), bank_name_snapshot, account_number_snapshot, account_holder_name_snapshot, created_at, updated_at
+- id, invoice_number, customer_name, customer_whatsapp, status (`new`/`processing`/`done`/`cancelled`), payment_status (`unpaid`/`paid`, default `unpaid` — lihat bagian 4.8), paid_at (nullable), note, order_date, shipping_cost (integer, default 0 — ongkir, lihat bagian 4.3), total (jumlah harga bersih item setelah diskon + ongkir), bank_account_id (nullable, rekening yang dipilih saat generate invoice), bank_name_snapshot, account_number_snapshot, account_holder_name_snapshot, created_at, updated_at
 
 **OrderItem**
-- id, order_id, product_id, product_name_snapshot, unit_price_snapshot, qty, subtotal
+- id, order_id, product_id, product_name_snapshot, unit_price_snapshot, qty, subtotal (harga kotor = unit_price_snapshot × qty), discount (integer, default 0 — nominal diskon baris ini; harga bersih = subtotal − discount, lihat bagian 4.3)
 
 **BankAccount**
 - id, bank_name, account_number, account_holder_name, is_active, created_at, updated_at
@@ -244,6 +250,9 @@ Jika tidak ada catatan khusus, development akan mengikuti asumsi default yang te
 - Fokus MVP: Produk (termasuk data pemasok), Pesanan + Invoice, Rekening Bank, Keuangan/Kas, Konfirmasi Pembayaran/Piutang, Dashboard ringkas, Login. Fitur lain (export, foto produk, stok) menyusul sesuai jawaban di bagian 12.
 
 ## 15. Riwayat Revisi Dokumen
+
+- **1 Okt 2026 — Diskon per item pada pesanan (aplikasi v1.2.0).** Saat membuat pesanan, Santi bisa mengisi besaran **diskon (Rupiah) per item** bila memang ada potongan harga. Harga bersih tiap item = (harga jual × qty) − diskon, dan total tagihan = jumlah harga bersih seluruh item **+ ongkir**. Kolom baru `OrderItem.discount` (default `0`) ditambahkan lewat migrasi; diskon dibatasi tidak boleh melebihi harga barang pada barisnya. Invoice PNG menampilkan harga bersih per baris, ditambah baris "Diskon" pada ringkasan (hanya bila ada). Lihat bagian 4.3, 7, dan 9.
+  - Rincian teknis & hasil verifikasi revisi ini ada di `README.md` (Changelog `[1.2.0]` dan bagian Hasil Verifikasi).
 
 - **30 Sep 2026 — Revisi tema, ongkir, dan penutup invoice (aplikasi v1.1.0).** Tiga perubahan atas permintaan Santi:
   1. **Tema warna berubah** dari "Girly & Active" (pink/lavender/coral/krem) menjadi **Turquoise** (turquoise/aqua/ocean/mint) — berlaku untuk UI aplikasi maupun invoice PNG. Lihat bagian 6 & 7.

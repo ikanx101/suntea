@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "OrderItem" ADD COLUMN "discount" INTEGER NOT NULL DEFAULT 0;
